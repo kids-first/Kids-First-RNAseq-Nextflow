@@ -8,12 +8,12 @@ process SAMTOOLS_SPLIT {
     val(threads)
 
     output:
-    path('*.bam'), emit: bam_files
+    path('*.bam'), optional: true, emit: bam_files
 
     script:
     """
     RG_NUM=`samtools head $input_reads | grep -c ^@RG`
-    if [ \$RG0NUM != 1 ]; then
+    if [ \$RG_NUM != 1 ]; then
       samtools split -f '%*_%#.bam' -@ $threads --reference $reference $input_reads
     fi
     """
