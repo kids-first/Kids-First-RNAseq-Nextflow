@@ -1,10 +1,11 @@
 process SAMTOOLS_SORT {
-    label 'process_medium'
+    label 'process_low'
     container "pgc-images.sbgenomics.com/d3b-bixu/samtools:1.9"
 
     input:
     path(unsorted_bam)
     val(output_basename)
+    val(threads)
 
     output:
     path('*.bam'), emit: sorted_bam
@@ -14,12 +15,12 @@ process SAMTOOLS_SORT {
     """
     samtools sort \\
     $unsorted_bam \\
-    --threads $task.cpus \\
+    --threads $threads \\
     -m 1G \\
     -O bam \\
     > ${output_basename}.sorted.bam \\
     && samtools index \\
-    -@ $task.cpus \\
+    -@ $threads \\
     ${output_basename}.sorted.bam \\
     ${output_basename}.sorted.bai
     """
