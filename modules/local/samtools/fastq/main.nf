@@ -14,8 +14,14 @@ process ALIGN_TO_FASTQ {
     path('*.converted_2.*'), optional: true, emit: fq2
 
     script:
-    def cram_ref_param = cram_reference ? "--reference $cram_reference" : ''
-    def output_fastq =  is_paired_end ? "-1 ${sample_id}.converted_1.fastq.gz -2 ${sample_id}.converted_2.fastq.gz -" : "-o ${sample_id}.converted_1.fastq.gz -"
+    def cram_ref_param =
+        cram_reference != "" ? "--reference $cram_reference"
+        : ''
+    def pe_output_str = "-1 ${sample_id}.converted_1.fastq.gz -2 ${sample_id}.converted_2.fastq.gz -"
+    def se_output_str = "-o ${sample_id}.converted_1.fastq.gz -"
+    def output_fastq =
+        is_paired_end ? pe_output_str
+        : se_output_str
     """
     samtools \\
     sort \\
