@@ -35,6 +35,8 @@ workflow samtools_head {
     
     main:
     SAMTOOLS_HEAD(input_align, line_filter)
+    emit:
+    SAMTOOLS_HEAD.out
 }
 
 workflow  {

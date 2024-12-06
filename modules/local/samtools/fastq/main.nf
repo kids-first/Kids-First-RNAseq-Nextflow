@@ -55,6 +55,9 @@ workflow align_to_fastq {
     
     main:
     ALIGN_TO_FASTQ(input_align, cram_reference, sample_id, threads, is_paired_end)
+    emit:
+    fq1 = ALIGN_TO_FASTQ.out.fq1
+    fq2 = ALIGN_TO_FASTQ.out.fq2
 }
 
 workflow  {
