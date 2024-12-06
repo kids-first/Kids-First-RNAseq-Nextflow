@@ -8,7 +8,7 @@ process SAMTOOLS_SPLIT {
     val(threads)
 
     output:
-    path('*.bam'), optional: true, emit: bam_files
+    tuple path('*.bam'), optional: true, emit: bam_files
 
     script:
     """

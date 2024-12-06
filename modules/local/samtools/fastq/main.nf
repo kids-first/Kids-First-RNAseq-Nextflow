@@ -23,16 +23,14 @@ process ALIGN_TO_FASTQ {
         is_paired_end ? pe_output_str
         : se_output_str
     """
-    samtools \\
-    sort \\
+    samtools sort \\
     -m 1G \\
     -n \\
     -O SAM \\
     -@ $threads \\
     $cram_ref_param \\
     $input_align \\
-    | samtools \\ 
-    fastq \\
+    | samtools fastq \\
     -c 2 \\
     -@ $threads \\
     $output_fastq

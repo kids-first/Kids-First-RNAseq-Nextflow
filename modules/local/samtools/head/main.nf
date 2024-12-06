@@ -3,11 +3,11 @@ process SAMTOOLS_HEAD {
     container "staphb/samtools:1.20"
 
     input:
-    path input_align
+    path(input_align)
     val line_filter
 
     output:
-    path 'header.txt', emit: header_file
+    path '*.txt', emit: header_file
 
     script:
     def grep_line =
@@ -19,7 +19,7 @@ process SAMTOOLS_HEAD {
     head \\
     $input_align \\
     $grep_line \\
-    > header.txt
+    > ${input_align.getBaseName()}.txt
     """
 
     stub:
@@ -40,7 +40,7 @@ workflow samtools_head {
 }
 
 workflow  {
-    input_align = Channel.fromPath(params.unsorted_bam)
+    input_align = Channel.fromPath(params.input_alignment_reads)
     line_filter = params.line_filter
     samtools_head(input_align, line_filter)
     

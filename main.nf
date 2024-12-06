@@ -14,6 +14,7 @@ include { align_to_fastq } from './modules/local/samtools/fastq/main'
 
 def eval_align_pairedness(result_file){
     def result = file(result_file).readLines()
+    println result[0]
     if (result[0] =~ /PAIRED/)
         return true
     if (result[0] =~ /SINGLE/)
@@ -41,13 +42,13 @@ workflow rnaseq_wf {
     // If reads are from BAM/CRAM, convert to fastq
     if (input_alignment_reads != "")
         samtools_split(input_alignment_reads, reference, threads)
-        samtools_head(Channel.of(samtools_split.out), line_filter)
+        samtools_head(samtools_split.out.flatten(), line_filter)
         // def star_rg = build_rgs(samtools_head.out, sample_id)
         if ( is_paired_end == ""){
             alignment_pairedness(input_alignment_reads, reference, max_reads, output_filename, threads)
             is_paired_end = eval_align_pairedness(alignment_pairedness.out)
         }
-        align_to_fastq(samtools_split.out, reference, sample_id, threads, is_paired_end)
+        align_to_fastq(samtools_split.out.flatten(), reference, sample_id, threads, is_paired_end)
 
     
     emit:
