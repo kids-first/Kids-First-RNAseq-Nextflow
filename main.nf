@@ -63,11 +63,11 @@ workflow {
     input_fastq_mates = Channel.fromPath(params.input_fastq_mates)
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
-    output_filename = Channel.from(params.output_filename)
-    line_filter = Channel.from(params.line_filter)
+    output_filename = Channel.value(params.output_filename)
+    line_filter = Channel.value(params.line_filter)
     sample_id = Channel.value(params.sample_id)
-    threads = Channel.from(params.threads)
-    reference = Channel.fromPath(params.reference)
+    threads = Channel.value(params.threads)
+    reference = Channel.fromPath(params.reference).first()
     rnaseq_wf(input_alignment_reads, input_fastq_reads, input_fastq_mates, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
 
 }
