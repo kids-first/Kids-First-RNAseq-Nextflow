@@ -7,7 +7,7 @@ include { align_to_fastq } from './modules/local/samtools/fastq/main'
 
 
 def build_rgs(rg_list, sample){
-    rg_list = rg_list.replaceAll(/(^@RG\t)(.*)(\tSM:.+?\t)(.*)/) { rgtag, pre_sm, sm, post_sm -> "$pre_sm\t$sample\t$post_sm" }.trim()
+    rg_list.view()
     return rg_list
 }
 
@@ -43,7 +43,7 @@ workflow rnaseq_wf {
         samtools_split(input_alignment_reads, reference, threads)
         samtools_head(samtools_split.out.flatten(), line_filter)
         def raw_rg_flist = samtools_head.out.collect { v -> v.readLines() }
-        def star_rg_list = build_rgs(raw_rg_flist, sample_id)
+        star_rg_list = raw_rg_flist.flatten().map { v -> v + "poop" }
         star_rg_list.view()
         if ( is_paired_end == ""){
             alignment_pairedness(input_alignment_reads, reference, max_reads, output_filename, threads)
