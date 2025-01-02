@@ -23,23 +23,3 @@ process SAMTOOLS_SPLIT {
     touch test.bam
     """
 }
-
-
-workflow samtools_split {
-    take:
-    input_reads
-    reference
-    threads
-    main:
-    SAMTOOLS_SPLIT(input_reads, reference, threads)
-    emit:
-    SAMTOOLS_SPLIT.out
-}
-
-workflow {
-    input_reads = Channel.fromPath(params.unsorted_bam)
-    reference = Channel.fromPath(params.reference)
-    threads = Channel.from(params.threads)
-    samtools_split(input_reads, reference, threads)
-
-}

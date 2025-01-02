@@ -27,26 +27,3 @@ process ALIGNMENT_PAIREDNESS {
     touch pairedness.txt
     """
 }
-
-workflow alignment_pairedness {
-    take:
-    input_reads
-    input_reference
-    max_reads
-    output_filename
-    threads
-    main:
-    ALIGNMENT_PAIREDNESS(input_reads, input_reference, max_reads, output_filename, threads)
-    emit:
-    ALIGNMENT_PAIREDNESS.out
-}
-
-workflow {
-    input_reads = Channel.fromPath(params.unsorted_bam)
-    input_reference = Channel.fromPath(params.reference)
-    max_reads = Channel.from(params.max_reads)
-    output_filename = Channel.from(params.output_filename)
-    threads = Channel.from(params.threads)
-    alignment_pairedness(input_reads, input_reference, max_reads, output_filename, threads)
-
-}

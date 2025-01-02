@@ -1,4 +1,4 @@
-process ALIGN_TO_FASTQ {
+process SAMTOOLS_FASTQ {
     label 'process_medium'
     container "staphb/samtools:1.20"
 
@@ -41,29 +41,4 @@ process ALIGN_TO_FASTQ {
     """
     touch reads.fastq.gz
     """
-}
-
-workflow align_to_fastq {
-    take:
-    input_align
-    cram_reference
-    sample_id
-    threads
-    is_paired_end
-    
-    main:
-    ALIGN_TO_FASTQ(input_align, cram_reference, sample_id, threads, is_paired_end)
-    emit:
-    fq1 = ALIGN_TO_FASTQ.out.fq1
-    fq2 = ALIGN_TO_FASTQ.out.fq2
-}
-
-workflow  {
-    input_align = Channel.fromPath(params.unsorted_bam)
-    cram_reference = Channel.fromPath(params.reference)
-    sample_id = Channel.from(params.sample_id)
-    threads = Channel.value(params.threads)
-    is_paired_end = params.is_paired_end
-    align_to_fastq(input_align, cram_reference, sample_id, threads, is_paired_end)
-    
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 
-include { samtools_split } from './modules/local/samtools/split/main'
-include { samtools_head } from './modules/local/samtools/head/main'
-include { alignment_pairedness } from './modules/local/python/pairedness/main'
-include { align_to_fastq } from './modules/local/samtools/fastq/main'
+include { SAMTOOLS_SPLIT } from './modules/local/samtools/split/main'
+include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
+include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
+include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 
 
 def build_rgs(rg_list, sample){
@@ -41,28 +41,28 @@ workflow rnaseq_wf {
 
     // If reads are from BAM/CRAM, convert to fastq
     if (input_alignment_reads != "")
-        samtools_split(input_alignment_reads, reference, threads)
-        samtools_head(samtools_split.out.flatten(), line_filter)
-        def raw_rg_flist = samtools_head.out.collect { v -> v.readLines() }
+        SAMTOOLS_SPLIT(input_alignment_reads, reference, threads)
+        SAMTOOLS_HEAD(SAMTOOLS_SPLIT.out.flatten(), line_filter)
+        def raw_rg_flist = SAMTOOLS_HEAD.out.collect { v -> v.readLines() }
         star_rg_list = build_rgs(raw_rg_flist.flatten(), sample_id)
         star_rg_list.view()
         if ( is_paired_end == ""){
-            alignment_pairedness(input_alignment_reads, reference, max_reads, output_filename, threads)
-            is_paired_end = eval_align_pairedness(alignment_pairedness.out)
+            ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, output_filename, threads)
+            is_paired_end = eval_align_pairedness(ALIGNMENT_PAIREDNESS.out)
         }
-        align_to_fastq(samtools_split.out.flatten(), reference, sample_id, threads, is_paired_end)
+        SAMTOOLS_FASTQ(SAMTOOLS_SPLIT.out.flatten(), reference, sample_id, threads, is_paired_end)
 
     
     emit:
-    fq1 = align_to_fastq.out.fq1 ?: input_fastq_reads
-    fq2 = align_to_fastq.out.fq2 ?: input_fastq_mates
-    rg_file = samtools_head.out
+    fq1 = SAMTOOLS_FASTQ.out.fq1 ?: input_fastq_reads
+    fq2 = SAMTOOLS_FASTQ.out.fq2 ?: input_fastq_mates
+    rg_file = SAMTOOLS_HEAD.out
     star_rg_list
 }
 
 workflow {
     input_alignment_reads = Channel.fromPath(params.input_alignment_reads)
-    input_fastq_reads = Channel.fromPath(params.input_fastq_reads)
+    input_fastq_reads = params.input_fastq_reads ? Channel.fromPath(params.input_fastq_reads) : Channel.value([])
     input_fastq_mates = Channel.fromPath(params.input_fastq_mates)
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
