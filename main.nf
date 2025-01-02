@@ -40,7 +40,8 @@ workflow rnaseq_wf {
     main:
 
     // If reads are from BAM/CRAM, convert to fastq
-    if (input_alignment_reads != "")
+    input_alignment_reads.view()
+    if (params.input_alignment_reads){
         SAMTOOLS_SPLIT(input_alignment_reads, reference, threads)
         SAMTOOLS_HEAD(SAMTOOLS_SPLIT.out.flatten(), line_filter)
         def raw_rg_flist = SAMTOOLS_HEAD.out.collect { v -> v.readLines() }
@@ -51,7 +52,7 @@ workflow rnaseq_wf {
             is_paired_end = eval_align_pairedness(ALIGNMENT_PAIREDNESS.out)
         }
         SAMTOOLS_FASTQ(SAMTOOLS_SPLIT.out.flatten(), reference, sample_id, threads, is_paired_end)
-
+    }
     
     emit:
     fq1 = SAMTOOLS_FASTQ.out.fq1 ?: input_fastq_reads
@@ -61,9 +62,9 @@ workflow rnaseq_wf {
 }
 
 workflow {
-    input_alignment_reads = Channel.fromPath(params.input_alignment_reads)
+    input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
     input_fastq_reads = params.input_fastq_reads ? Channel.fromPath(params.input_fastq_reads) : Channel.value([])
-    input_fastq_mates = Channel.fromPath(params.input_fastq_mates)
+    input_fastq_mates = params.input_fastq_mates ? Channel.fromPath(params.input_fastq_mates) : Channel.value([])
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
     output_filename = Channel.value(params.output_filename)
