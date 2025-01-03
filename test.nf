@@ -2,7 +2,9 @@
 include { CUTADAPT } from './modules/local/cutadapt/main'
 
 workflow  {
-    reads = Channel.fromFilePairs(params.reads)
-    reads.view()
-    CUTADAPT(reads)
+    reads = Channel.fromPath(params.reads)
+    mates = params.mates ? Channel.fromPath(params.mates) : Channel.value([])
+
+    CUTADAPT(reads, mates)
+    CUTADAPT.out.fastq_out.view()
 }

@@ -1,0 +1,6 @@
+{
+    "reads": ["./work/73/f5cc36f578effbaba3be8564f28693/TEST_SAMPLE.converted_1.fastq.gz", "./work/ef/00e3a151839b06fb98c8615c85a72c/TEST_SAMPLE.converted_1.fastq.gz"],
+    "mates": ["./work/73/f5cc36f578effbaba3be8564f28693/TEST_SAMPLE.converted_2.fastq.gz", "./work/ef/00e3a151839b06fb98c8615c85a72c/TEST_SAMPLE.converted_2.fastq.gz"],
+    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+    "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG"
+}

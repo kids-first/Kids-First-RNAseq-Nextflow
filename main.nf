@@ -4,6 +4,7 @@ include { SAMTOOLS_SPLIT } from './modules/local/samtools/split/main'
 include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
 include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
 include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
+include { CUTADAPT } from './modules/local/cutadapt/main'
 
 
 def build_rgs(rg_list, sample){
@@ -53,7 +54,11 @@ workflow rnaseq_wf {
         }
         SAMTOOLS_FASTQ(SAMTOOLS_SPLIT.out.flatten(), reference, sample_id, threads, is_paired_end)
     }
-    
+    if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
+        
+        CUTADAPT(SAMTOOLS_FASTQ.out.fq1 ?: input_fastq_reads, SAMTOOLS_FASTQ.out.fq2 ?: input_fastq_mates)
+        rg_fqs = CUTADAPT.out.fastq_out
+    }
     emit:
     fq1 = SAMTOOLS_FASTQ.out.fq1 ?: input_fastq_reads
     fq2 = SAMTOOLS_FASTQ.out.fq2 ?: input_fastq_mates
