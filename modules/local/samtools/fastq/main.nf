@@ -5,7 +5,6 @@ process SAMTOOLS_FASTQ {
     input:
     path(input_align)
     path(cram_reference)
-    val(sample_id)
     val(threads)
     val(is_paired_end)
 
@@ -17,8 +16,8 @@ process SAMTOOLS_FASTQ {
     def cram_ref_param =
         cram_reference != "" ? "--reference $cram_reference"
         : ''
-    def pe_output_str = "-1 ${sample_id}.converted_1.fastq.gz -2 ${sample_id}.converted_2.fastq.gz -"
-    def se_output_str = "-o ${sample_id}.converted_1.fastq.gz -"
+    def pe_output_str = "-1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
+    def se_output_str = "-o ${input_align.getBaseName()}.converted_1.fastq.gz -"
     def output_fastq =
         is_paired_end ? pe_output_str
         : se_output_str
