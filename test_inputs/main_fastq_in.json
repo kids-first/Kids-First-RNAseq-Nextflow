@@ -1,0 +1,11 @@
+{
+    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+    "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG",
+    "input_fastq_reads": ["/home/ubuntu/volume/TEST_NF/work/9f/7848f3c87cc4a02cb756f93acc8901/TRIMMED.NA12878_0.converted_1.fastq.gz", "/home/ubuntu/volume/TEST_NF/work/02/1cecacf342518a679efeb67fae4c57/TRIMMED.NA12878_1.converted_1.fastq.gz", "/home/ubuntu/volume/TEST_NF/work/41/05f8cabdeca60cbced7f652a1ad406/TRIMMED.NA12878_2.converted_1.fastq.gz" ],
+    "input_fastq_mates": ["/home/ubuntu/volume/TEST_NF/work/9f/7848f3c87cc4a02cb756f93acc8901/TRIMMED.NA12878_0.converted_2.fastq.gz", "/home/ubuntu/volume/TEST_NF/work/02/1cecacf342518a679efeb67fae4c57/TRIMMED.NA12878_1.converted_2.fastq.gz", "/home/ubuntu/volume/TEST_NF/work/41/05f8cabdeca60cbced7f652a1ad406/TRIMMED.NA12878_2.converted_2.fastq.gz" ], 
+    "input_rg_strs": [ "ID:A\tSM:NA12878_TEST\tLB:Solexa-NA12878\tPL:illumina\tPU:H06HDADXX130110.2.ATCACGAT", "ID:B9efeb67fSM:NA12878_TESTNLB:Solexa-NA12878d_2.fasPL:illumina\tPU:H06HDADXX130110.1.ATCACGAT", "ID:C\tSM:NA12878_TEST\tLB:Solexa-NA12878\tPL:illumina\tPU:H06JUADXX130110.1.ATCACGAT" ], 
+    "sample_id": "NA12878_TEST",
+    "reference": "Homo_sapiens_assembly38.fasta",
+    "threads": 8,
+    "is_paired_end": 1
+}
