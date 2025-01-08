@@ -3,14 +3,14 @@ process SAMTOOLS_FASTQ {
     container "staphb/samtools:1.20"
 
     input:
-    path(input_align)
+    tuple val(meta), path(input_align)
     path(cram_reference)
     val(threads)
     val(is_paired_end)
 
     output:
-    path('*.converted_1.*'), emit: fq1
-    path('*.converted_2.*'), optional: true, emit: fq2
+    tuple val(meta), path('*.converted_1.*'), emit: fq1
+    tuple val(meta), path('*.converted_2.*'), optional: true, emit: fq2
 
     script:
     def cram_ref_param =

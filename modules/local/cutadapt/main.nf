@@ -3,12 +3,12 @@ process CUTADAPT {
     container "pgc-images.sbgenomics.com/d3b-bixu/cutadapt:3.4"
 
     input:
-    path(reads)
-    path(mates)
+    tuple val(meta_reads), path(reads)
+    tuple val(meta_mates), path(mates)
 
     output:
-    path("TRIMMED.*"), emit: fastq_out
-    path("cutadapt_stats.txt"), emit: cutadapt_metrics
+    tuple val(meta_reads), path("TRIMMED.*"), emit: fastq_out
+    tuple val(meta_reads), path("cutadapt_stats.txt"), emit: cutadapt_metrics
 
     script:
     def args = task.ext.args ?: ''

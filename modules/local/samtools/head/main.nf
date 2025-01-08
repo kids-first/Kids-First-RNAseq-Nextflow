@@ -3,11 +3,11 @@ process SAMTOOLS_HEAD {
     container "staphb/samtools:1.20"
 
     input:
-    path(input_align)
+    tuple val(meta), path(input_align)
     val line_filter
 
     output:
-    path '*.txt', emit: header_file
+    tuple val(meta), stdout, emit: header_info
 
     script:
     def grep_line =
@@ -18,8 +18,7 @@ process SAMTOOLS_HEAD {
     samtools \\
     head \\
     $input_align \\
-    $grep_line \\
-    > ${input_align.getBaseName()}.txt
+    $grep_line
     """
 
     stub:
