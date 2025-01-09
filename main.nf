@@ -46,6 +46,7 @@ workflow preprocess_reads {
         // Will add an "index" to the output to ensure RGs and files are kept together
         def i = 0
         align_split_w_meta = SAMTOOLS_SPLIT.out.flatten().map { tuple(i++, it) }
+        align_split_w_meta.view()
 
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
