@@ -3,8 +3,8 @@ process CUTADAPT {
     container "pgc-images.sbgenomics.com/d3b-bixu/cutadapt:3.4"
 
     input:
-    tuple val(meta_reads), path(reads)
-    tuple val(meta_mates), path(mates)
+    // Single end or paired end, 1 or 2 files, no other possibilities for this module
+    tuple val(meta_reads), path(reads, arity: '1..2')
 
     output:
     tuple val(meta_reads), path("TRIMMED.*"), emit: fastq_out
@@ -12,11 +12,10 @@ process CUTADAPT {
 
     script:
     def args = task.ext.args ?: ''
-    def read_files = mates ? reads + " " + mates : reads
     """
     cutadapt -j 8 \\
     $args \\
-    $read_files \\
+    $reads \\
     > cutadapt_stats.txt
     """
 
