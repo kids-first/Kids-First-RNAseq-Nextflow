@@ -9,7 +9,7 @@ include { CUTADAPT } from './modules/local/cutadapt/main'
 
 def build_rgs(rg_list, sample){
     rg_list = rg_list.map { r -> [r[0], r[1].replaceFirst(/^@RG\t/,"")] }
-    rg_list = rg_list.map { r -> [r[0], r[1].replaceFirst(/\tSM:.+?\t/, "\tSM:${sample.value}\t")] }
+    rg_list = rg_list.map { r -> [r[0], r[1].replaceFirst(/\tSM:.+?\t/, "\tSM:${sample.value}\t").trim()] }
     return rg_list
 }
 
@@ -46,8 +46,6 @@ workflow preprocess_reads {
         // Will add an "index" to the output to ensure RGs and files are kept together
         def i = 0
         align_split_w_meta = SAMTOOLS_SPLIT.out.flatten().map { tuple(i++, it) }
-        align_split_w_meta.view()
-
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
         if ( is_paired_end == ""){
@@ -59,7 +57,6 @@ workflow preprocess_reads {
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.fq1 : input_fastq_reads
         mates = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.fq2 : input_fastq_mates
-        // cutadapt_reads = build_cutadapt_in(reads, mates, is_paired_end)
         cutadapt_reads = params.is_paired_end ? reads.concat(mates).groupTuple() : reads
         CUTADAPT(cutadapt_reads)
     }
