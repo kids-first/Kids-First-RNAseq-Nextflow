@@ -1,10 +1,12 @@
 #!/usr/bin/env nextflow
 
+include { SAMTOOLS_HEAD_RG_CT } from './modules/local/samtools/head_rg_ct/main'
 include { SAMTOOLS_SPLIT } from './modules/local/samtools/split/main'
 include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
 include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
 include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 include { CUTADAPT } from './modules/local/cutadapt/main'
+
 
 
 def build_rgs(rg_list, sample){
@@ -42,10 +44,22 @@ workflow preprocess_reads {
 
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
-        SAMTOOLS_SPLIT(input_alignment_reads, reference, threads)
+
+        SAMTOOLS_HEAD_RG_CT(input_alignment_reads, line_filter)
+        // stdout comes in a str, must cast to int to make this a valid comparison!
+        SAMTOOLS_HEAD_RG_CT.out.branch { v ->
+            single: v[0].toInteger() == 1
+            multi: v[0].toInteger() > 1
+        }
+        .set { rg_cts }
         // Will add an "index" to the output to ensure RGs and files are kept together
         def i = 0
+        SAMTOOLS_SPLIT(rg_cts.multi, reference, threads)
+        // Combine any multi RG outputs that have been split with single RG inputs
         align_split_w_meta = SAMTOOLS_SPLIT.out.flatten().map { tuple(i++, it) }
+        singles = rg_cts.single.map { tuple(i++, it[1]) }
+        align_split_w_meta = align_split_w_meta.concat(singles)
+        align_split_w_meta.view()
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
         if ( is_paired_end == ""){

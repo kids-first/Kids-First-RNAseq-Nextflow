@@ -1,13 +1,13 @@
-process SAMTOOLS_HEAD {
+process SAMTOOLS_HEAD_RG_CT {
     label 'process_low'
     container "staphb/samtools:1.20"
 
     input:
-    tuple val(meta), path(input_align)
+    path(input_align)
     val line_filter
 
     output:
-    tuple val(meta), stdout, emit: header_info
+    tuple(stdout, path(input_align))
 
     script:
     def grep_line =
@@ -18,6 +18,9 @@ process SAMTOOLS_HEAD {
     samtools \\
     head \\
     $input_align \\
-    $grep_line
+    $grep_line \\
+    | wc -l \\
+    | tr -d "\n"
     """
+
 }
