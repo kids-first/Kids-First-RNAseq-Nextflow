@@ -45,21 +45,24 @@ workflow preprocess_reads {
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
 
-        SAMTOOLS_HEAD_RG_CT(input_alignment_reads, line_filter)
-        // stdout comes in a str, must cast to int to make this a valid comparison!
-        SAMTOOLS_HEAD_RG_CT.out.branch { v ->
-            single: v[0].toInteger() == 1
-            multi: v[0].toInteger() > 1
-        }
-        .set { rg_cts }
-        // Will add an "index" to the output to ensure RGs and files are kept together
-        def i = 0
-        SAMTOOLS_SPLIT(rg_cts.multi, reference, threads)
+        align_w_meta = input_alignment_reads.map{ file -> [["id": reads.baseName], file] }
+        SAMTOOLS_HEAD_RG_CT(align_w_meta)
+        SAMTOOLS_HEAD_RG_CT.out.reads.branch { meta, rg_ct, file ->
+            single: rg_ct.toInteger() == 1
+            multi: rg_ct.toInteger() > 1
+        }.set { rg_cts }
+        single_rg_bams = rg_cts.single.map{ meta, rg_ct, file -> [meta, file] }
+        multi_rg_bams = rg_cts.multi.map{ meta, rg_ct, file -> [meta, file] }
+        SAMTOOLS_SPLIT(multi_rg_bams, reference, threads)
         // Combine any multi RG outputs that have been split with single RG inputs
-        align_split_w_meta = SAMTOOLS_SPLIT.out.flatten().map { tuple(i++, it) }
-        singles = rg_cts.single.map { tuple(i++, it[1]) }
-        align_split_w_meta = align_split_w_meta.concat(singles)
+        // single_rg_bams looks like [[meta, file], [meta, file]]
+        // Each file will have one meta
+        // SAMTOOLS_SPLIT.out.bams looks like [[meta, [file1, file2, file3]],[meta, [file1, file2, file3]]]
+        // Need to transpose the samtools split outputs so each file gets meta
+        align_split_w_meta = single_rg_bams.concat(SAMTOOLS_SPLIT.out.bams.transpose())
         align_split_w_meta.view()
+
+        // All below here is left a a practice to the reader
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
         if ( is_paired_end == ""){

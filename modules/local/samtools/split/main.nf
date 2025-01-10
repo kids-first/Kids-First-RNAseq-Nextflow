@@ -3,19 +3,16 @@ process SAMTOOLS_SPLIT {
     container "staphb/samtools:1.20"
 
     input:
-    tuple (val(rg_ct), path(input_reads))
+    tuple val(meta), path(input_reads)
     path(reference)
     val(threads)
 
     output:
-    path('*.bam', emit: bam_files)
+    tuple val(meta), path('*.bam'), emit: bams
 
     script:
     """
-    RG_NUM=`samtools head $input_reads | grep -c ^@RG`
-    if [ \$RG_NUM != 1 ]; then
-      samtools split -f '%*_%#.bam' -@ $threads --reference $reference $input_reads
-    fi
+    samtools split -f '%*_%#.bam' -@ $threads --reference $reference $input_reads
     """
 
     stub:
