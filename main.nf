@@ -45,11 +45,12 @@ workflow preprocess_reads {
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
 
-        align_w_meta = input_alignment_reads.map{ file -> [["id": reads.baseName], file] }
+        align_w_meta = input_alignment_reads.map{ file -> [["id": file.baseName], file] }
         SAMTOOLS_HEAD_RG_CT(align_w_meta)
+        // Casting rg_ct might be necessary. I just left it out for simplicity sake
         SAMTOOLS_HEAD_RG_CT.out.reads.branch { meta, rg_ct, file ->
-            single: rg_ct.toInteger() == 1
-            multi: rg_ct.toInteger() > 1
+            single: rg_ct == 1
+            multi: rg_ct > 1
         }.set { rg_cts }
         single_rg_bams = rg_cts.single.map{ meta, rg_ct, file -> [meta, file] }
         multi_rg_bams = rg_cts.multi.map{ meta, rg_ct, file -> [meta, file] }
