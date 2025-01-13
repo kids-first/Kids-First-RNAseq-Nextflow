@@ -9,15 +9,14 @@ process SAMTOOLS_FASTQ {
     val(is_paired_end)
 
     output:
-    tuple val(meta), path('*.converted_1.*'), emit: fq1
-    tuple val(meta), path('*.converted_2.*'), optional: true, emit: fq2
+    tuple val(meta), path('*.converted*')
 
     script:
     def cram_ref_param =
         cram_reference != "" ? "--reference $cram_reference"
         : ''
     def pe_output_str = "-1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
-    def se_output_str = "-o ${input_align.getBaseName()}.converted_1.fastq.gz -"
+    def se_output_str = "-o ${input_align.getBaseName()}.converted.fastq.gz -"
     def output_fastq =
         is_paired_end ? pe_output_str
         : se_output_str

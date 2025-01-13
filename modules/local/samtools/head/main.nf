@@ -7,7 +7,7 @@ process SAMTOOLS_HEAD {
     val line_filter
 
     output:
-    tuple val(meta), stdout, emit: header_info
+    tuple val(meta), stdout, path(input_align), emit: header_info
 
     script:
     def grep_line =
