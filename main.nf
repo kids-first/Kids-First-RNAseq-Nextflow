@@ -10,10 +10,12 @@ include { CUTADAPT } from './modules/local/cutadapt/main'
 
 
 def build_rgs(rg_list, sample){
-    rg_list = rg_list.map { r -> [r[0], r[1].replaceFirst(/^@RG\t/,"")] }
-    rg_list = rg_list.map { r -> [r[0], r[1].replaceFirst(/\tSM:.+?\t/, "\tSM:${sample.value}\t").trim()] }
+    // STAR RG becomes the meta
+    rg_list = rg_list.map { _meta, rg, file -> [rg.replaceFirst(/^@RG\t/,""), file] }
+    rg_list = rg_list.map { rg, file -> [rg.replaceFirst(/\tSM:.+?\t/, "\tSM:${sample.value}\t").trim(), file] }
     return rg_list
 }
+
 
 def eval_align_pairedness(result_file){
     def result = file(result_file).readLines()
@@ -30,8 +32,6 @@ workflow preprocess_reads {
     take:
     input_alignment_reads
     input_fastq_reads
-    input_fastq_mates
-    input_rg_strs
     line_filter
     is_paired_end
     max_reads
@@ -44,52 +44,47 @@ workflow preprocess_reads {
 
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
-
-        SAMTOOLS_HEAD_RG_CT(input_alignment_reads, line_filter)
-        // stdout comes in a str, must cast to int to make this a valid comparison!
-        SAMTOOLS_HEAD_RG_CT.out.branch { v ->
-            single: v[0].toInteger() == 1
-            multi: v[0].toInteger() > 1
-        }
-        .set { rg_cts }
-        // Will add an "index" to the output to ensure RGs and files are kept together
-        def i = 0
-        SAMTOOLS_SPLIT(rg_cts.multi, reference, threads)
+        // initialize with metadata to track input bams
+        align_w_meta = input_alignment_reads.map{ file -> tuple("id": file.baseName, file) }
+        SAMTOOLS_HEAD_RG_CT(align_w_meta)
+        // Must cast as int as stdout or env will still be a string
+        SAMTOOLS_HEAD_RG_CT.out.reads.branch { _meta, rg_ct, _file ->
+            single: rg_ct.toInteger() == 1
+            multi: rg_ct.toInteger() > 1
+        }.set { rg_cts }
+        single_rg_bams = rg_cts.single.map{ meta, _rg_ct, file -> [meta, file] }
+        multi_rg_bams = rg_cts.multi.map{ meta, _rg_ct, file -> [meta, file] }
+        SAMTOOLS_SPLIT(multi_rg_bams, reference, threads)
         // Combine any multi RG outputs that have been split with single RG inputs
-        align_split_w_meta = SAMTOOLS_SPLIT.out.flatten().map { tuple(i++, it) }
-        singles = rg_cts.single.map { tuple(i++, it[1]) }
-        align_split_w_meta = align_split_w_meta.concat(singles)
-        align_split_w_meta.view()
+        // single_rg_bams looks like [[meta, file], [meta, file]]
+        // Each file will have one meta
+        // SAMTOOLS_SPLIT.out.bams looks like [[meta, [file1, file2, file3]],[meta, [file1, file2, file3]]]
+        // Need to transpose the samtools split outputs so each file gets meta
+        align_split_w_meta = single_rg_bams.concat(SAMTOOLS_SPLIT.out.bams.transpose())
+
+        // All below here is left a a practice to the reader
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
         if ( is_paired_end == ""){
             ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, output_filename, threads)
             is_paired_end = eval_align_pairedness(ALIGNMENT_PAIREDNESS.out)
         }
-        SAMTOOLS_FASTQ(align_split_w_meta, reference, threads, is_paired_end)
-        }
+        SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end)
+    }
+    // reformat fastq inputs to match output from alignment conversion block
+    in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] } : Channel.empty()
+    reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
-        reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.fq1 : input_fastq_reads
-        mates = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.fq2 : input_fastq_mates
-        cutadapt_reads = params.is_paired_end ? reads.concat(mates).groupTuple() : reads
-        CUTADAPT(cutadapt_reads)
+        CUTADAPT(reads)
     }
     emit:
-    fastq_to_align = (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) ? CUTADAPT.out.fastq_out :
-        (SAMTOOLS_FASTQ.out.fq1.join(SAMTOOLS_FASTQ.out.fq2) ?: [input_fastq_reads, input_fastq_mates])
-    star_rg_list = params.input_alignment_reads ? star_rg_list : input_rg_strs
+    fastq_to_align = reads
 }
 
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
-    // Use an iterator to index the input fastq files and rg list if not align. Can't "recycle" i as async nature seems to increment i before it can be reset to 0
-    def i = 0
-    input_fastq_reads = params.input_fastq_reads ? Channel.fromPath(params.input_fastq_reads).flatten().map { tuple(i++, it) } : Channel.value([])
-    def j = 0
-    input_fastq_mates = params.input_fastq_mates ? Channel.fromPath(params.input_fastq_mates).flatten().map { tuple(j++, it) } : Channel.value([])
-    def k = 0
-    input_rg_strs = params.input_rg_strs ? Channel.value(params.input_rg_strs).flatten().map { tuple(k++, it) } : Channel.value([])
+    input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
     output_filename = Channel.value(params.output_filename)
@@ -97,11 +92,7 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
-    preprocess_reads(input_alignment_reads, input_fastq_reads, input_fastq_mates, input_rg_strs, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
-    preprocess_reads.out.fastq_to_align.collect().view()
-    preprocess_reads.out.star_rg_list.collect().view()
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
+    preprocess_reads.out.fastq_to_align.view()
 
-    // publish:
-    // preprocess_reads.out.fastq_to_align >> 'reads_to_align'
-    // preprocess_reads.out.star_rg_list >> 'read_groups'
 }

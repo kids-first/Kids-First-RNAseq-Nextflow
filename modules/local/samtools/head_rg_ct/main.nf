@@ -3,24 +3,14 @@ process SAMTOOLS_HEAD_RG_CT {
     container "staphb/samtools:1.20"
 
     input:
-    path(input_align)
-    val line_filter
+    tuple val(meta), path(input_align)
 
     output:
-    tuple(stdout, path(input_align))
+    tuple val(meta), env('RG_NUM'), path(input_align), emit: reads
 
     script:
-    def grep_line =
-        line_filter != "" ? "| grep $line_filter"
-        : ''
-
     """
-    samtools \\
-    head \\
-    $input_align \\
-    $grep_line \\
-    | wc -l \\
-    | tr -d "\n"
+    RG_NUM=`samtools head $input_align | grep -c ^@RG`
     """
 
 }
