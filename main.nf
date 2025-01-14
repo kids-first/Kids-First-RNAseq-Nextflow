@@ -74,7 +74,8 @@ workflow preprocess_reads {
     }
 
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
-        reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out : input_fastq_reads
+        in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] }.view() : Channel.empty()
+        reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
         reads.view()
         CUTADAPT(reads)
     }
@@ -87,8 +88,7 @@ workflow preprocess_reads {
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
-    input_fastq_reads = params.input_fastq_reads ? Channel.of(params.input_fastq_reads).groupTuple()
-    .groupTuple() : Channel.value([])
+    input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
     input_rg_strs = params.input_rg_strs ? Channel.value(params.input_rg_strs) : Channel.value([])
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
