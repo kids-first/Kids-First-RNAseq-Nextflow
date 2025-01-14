@@ -32,7 +32,6 @@ workflow preprocess_reads {
     take:
     input_alignment_reads
     input_fastq_reads
-    input_rg_strs
     line_filter
     is_paired_end
     max_reads
@@ -45,7 +44,7 @@ workflow preprocess_reads {
 
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
-
+        // initialize with metadata to track input bams
         align_w_meta = input_alignment_reads.map{ file -> tuple("id": file.baseName, file) }
         SAMTOOLS_HEAD_RG_CT(align_w_meta)
         // Must cast as int as stdout or env will still be a string
@@ -72,24 +71,20 @@ workflow preprocess_reads {
         }
         SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end)
     }
-
+    // reformat fastq inputs to match output from alignment conversion block
+    in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] } : Channel.empty()
+    reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
-        in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] }.view() : Channel.empty()
-        reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
-        reads.view()
         CUTADAPT(reads)
     }
-    // emit:
-    // fastq_to_align = (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) ? CUTADAPT.out.fastq_out :
-    //     (SAMTOOLS_FASTQ.out ?: input_fastq_reads)
-    // star_rg_list = params.input_alignment_reads ? star_rg_list : input_rg_strs
+    emit:
+    fastq_to_align = reads
 }
 
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
     input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
-    input_rg_strs = params.input_rg_strs ? Channel.value(params.input_rg_strs) : Channel.value([])
     is_paired_end = Channel.value(params.is_paired_end)
     max_reads = Channel.value(params.max_reads)
     output_filename = Channel.value(params.output_filename)
@@ -97,10 +92,7 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
-    preprocess_reads(input_alignment_reads, input_fastq_reads, input_rg_strs, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
-    // preprocess_reads.out.fastq_to_align.view()
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
+    preprocess_reads.out.fastq_to_align.view()
 
-    // publish:
-    // preprocess_reads.out.fastq_to_align >> 'reads_to_align'
-    // preprocess_reads.out.star_rg_list >> 'read_groups'
 }
