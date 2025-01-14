@@ -1,0 +1,9 @@
+{
+    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+    "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG",
+    "input_alignment_reads": ["MIXED_RG_CT/NA12878_1RG.bam", "MIXED_RG_CT/NA12878_2RG.bam"],
+    "sample_id": "NA12878_TEST",
+    "reference": "Homo_sapiens_assembly38.fasta",
+    "threads": 8,
+    "is_paired_end": 1
+}
