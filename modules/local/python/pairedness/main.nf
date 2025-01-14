@@ -6,24 +6,25 @@ process ALIGNMENT_PAIREDNESS {
     path input_reads
     path input_reference
     val max_reads
-    val output_filename
     val threads
 
 
     output:
-    path "${output_filename}", emit: identifier
+    env('RESULT'), emit: result
 
     script:
     """
-    alignmentfile_pairedness.py \\
+    RESULT=`alignmentfile_pairedness.py \\
     --input_reads $input_reads \\
     --input_reference $input_reference \\
     --max_reads $max_reads \\
-    --threads $threads \\
-    > $output_filename
-    """
-    stub:
-    """
-    touch pairedness.txt
+    --threads $threads`
+
+    if [ \$RESULT == 'ReadType:MIXED' ]
+    then
+    echo "Result was mixed, could not determine pairedness";
+    exit 1;
+    fi
+
     """
 }

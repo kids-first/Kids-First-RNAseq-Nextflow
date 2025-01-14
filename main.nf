@@ -17,17 +17,6 @@ def build_rgs(rg_list, sample){
 }
 
 
-def eval_align_pairedness(result_file){
-    def result = file(result_file).readLines()
-    println result[0]
-    if (result[0] =~ /PAIRED/)
-        return true
-    if (result[0] =~ /SINGLE/)
-        return false
-    if (result[0] =~ /MIXED/)
-        error "Could not accurately determine pairedness of input align file, please manually specify"
-}
-
 workflow preprocess_reads {
     take:
     input_alignment_reads
@@ -35,7 +24,6 @@ workflow preprocess_reads {
     line_filter
     is_paired_end
     max_reads
-    output_filename
     sample_id
     threads 
     reference
@@ -65,10 +53,11 @@ workflow preprocess_reads {
         // All below here is left a a practice to the reader
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
-        if ( is_paired_end == ""){
-            ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, output_filename, threads)
-            is_paired_end = eval_align_pairedness(ALIGNMENT_PAIREDNESS.out)
+        if (is_paired_end == ""){
+            ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, threads)
+            is_paired_end = ALIGNMENT_PAIREDNESS.out.map{ it ==~ /ReadType:PAIRED/ }
         }
+
         SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end)
     }
     // reformat fastq inputs to match output from alignment conversion block
@@ -85,14 +74,13 @@ workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
     input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
-    is_paired_end = Channel.value(params.is_paired_end)
+    is_paired_end = params.is_paired_end != "" ? params.is_paired_end : ""
     max_reads = Channel.value(params.max_reads)
-    output_filename = Channel.value(params.output_filename)
     line_filter = Channel.value(params.line_filter)
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
-    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, output_filename, sample_id, threads, reference)
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference)
     preprocess_reads.out.fastq_to_align.view()
 
 }

@@ -4,6 +4,5 @@
     "input_alignment_reads": "NA12878.bam",
     "sample_id": "NA12878_TEST",
     "reference": "Homo_sapiens_assembly38.fasta",
-    "threads": 8,
-    "is_paired_end": 1
+    "threads": 8
 }
