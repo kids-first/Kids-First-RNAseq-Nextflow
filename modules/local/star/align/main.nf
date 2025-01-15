@@ -15,7 +15,7 @@ process STAR_ALIGN {
     """
     tar -I pigz -xvf $genomeDir \\
     && STAR \\
-    --genomeDir ./${genomeDir.getName().replace(".tar", "")} \\
+    --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest $readFilesManifest \\
     --outFileNamePrefix $outFileNamePrefix

@@ -49,7 +49,6 @@ workflow preprocess_reads {
         // SAMTOOLS_SPLIT.out.bams looks like [[meta, [file1, file2, file3]],[meta, [file1, file2, file3]]]
         // Need to transpose the samtools split outputs so each file gets meta
         align_split_w_meta = single_rg_bams.concat(SAMTOOLS_SPLIT.out.bams.transpose())
-
         // All below here is left a a practice to the reader
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
@@ -57,8 +56,10 @@ workflow preprocess_reads {
             ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, threads)
             is_paired_end = ALIGNMENT_PAIREDNESS.out.map{ it ==~ /ReadType:PAIRED/ }
         }
-
-        SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end)
+        else {
+            is_paired_end = Channel.value(is_paired_end)
+        }
+        SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end.collect())
     }
     // reformat fastq inputs to match output from alignment conversion block
     in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] } : Channel.empty()
@@ -81,6 +82,6 @@ workflow {
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference)
-    preprocess_reads.out.fastq_to_align.view()
+    preprocess_reads.out.fastq_to_align.collect().view()
 
 }

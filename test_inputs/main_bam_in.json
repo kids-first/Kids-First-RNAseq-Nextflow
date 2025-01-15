@@ -1,6 +1,7 @@
 {
     "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
     "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG",
+    "cutadapt_min_len": 20,
     "input_alignment_reads": "NA12878.bam",
     "sample_id": "NA12878_TEST",
     "reference": "Homo_sapiens_assembly38.fasta",
