@@ -1,5 +1,5 @@
 process STAR_ALIGN {
-    label 'process_high'
+    label 'process_star'
     container "pgc-images.sbgenomics.com/d3b-bixu/star:2.7.10a"
 
     input:
@@ -15,7 +15,7 @@ process STAR_ALIGN {
     """
     tar -I pigz -xvf $genomeDir \\
     && STAR \\
-    --genomeDir ./$genomeDir.baseBame.replace(".tar", "") \\
+    --genomeDir ./${genomeDir.getName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest $readFilesManifest \\
     --outFileNamePrefix $outFileNamePrefix
