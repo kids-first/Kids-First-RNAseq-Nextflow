@@ -15,7 +15,7 @@ process STAR_ALIGN {
     path('*Aligned.out.bam'), emit: genomic_bam_out
     path('*SJ.out.tab.gz'), emit: junctions_out
     path('*Aligned.toTranscriptome.out.bam'), emit: transcriptome_bam_out
-    path('*Chimeric.out.sam'), emit: chimeric_sam_out
+    path('*Chimeric.out.sam'), optional: true, emit: chimeric_sam_out
     path('*Chimeric.out.junction'), emit: chimeric_junctions
     path('*ReadsPerGene.out.tab.gz'), emit: gene_counts
 
