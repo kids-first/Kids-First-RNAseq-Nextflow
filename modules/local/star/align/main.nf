@@ -9,17 +9,27 @@ process STAR_ALIGN {
     val(outFileNamePrefix)
 
     output:
+    path('*Log.progress.out'), emit: log_progress_out
+    path('*Log.out'), emit: log_out
+    path('*Log.final.out'), emit: log_final_out
     path('*Aligned.out.bam'), emit: genomic_bam_out
+    path('*SJ.out.tab.gz'), emit: junctions_out
+    path('*Aligned.toTranscriptome.out.bam'), emit: transcriptome_bam_out
+    path('*Chimeric.out.sam'), emit: chimeric_sam_out
+    path('*Chimeric.out.junction'), emit: chimeric_junctions
+    path('*ReadsPerGene.out.tab.gz'), emit: gene_counts
 
     script:
+    def star_ext_args = task.ext.args ?: ''
     """
     tar -I pigz -xvf $genomeDir \\
     && STAR \\
     --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest $readFilesManifest \\
-    --outFileNamePrefix $outFileNamePrefix
-
+    --outFileNamePrefix "${outFileNamePrefix}." \\
+    $star_ext_args \\
+    && pigz *ReadsPerGene.out.tab *SJ.out.tab
     """
 
 }
