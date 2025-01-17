@@ -1,0 +1,11 @@
+{
+    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+    "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG",
+    "cutadapt_min_len": 20,
+    "input_alignment_reads": "BS_X3F8NMS4_subset_rna.cram",
+    "sample_id": "BS_X3F8NMS4",
+    "reference": "GRCh38.primary_assembly.genome.fa",
+    "genomeDir": "STAR_2.7.10a_GENCODE39.tar.gz",
+    "output_basename": "31160a89-b89b-4f18-8901-7f0fd3205cff",
+    "threads": 8
+}

@@ -17,8 +17,9 @@ process SAMTOOLS_FASTQ {
         : ''
     def pe_output_str = "-1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
     def se_output_str = "-o ${input_align.getBaseName()}.converted.fastq.gz -"
+    // is_paired_end is passed as an array to satisfy both single file and scatter
     def output_fastq =
-        is_paired_end ? pe_output_str
+        is_paired_end[0] ? pe_output_str
         : se_output_str
     """
     samtools sort \\
