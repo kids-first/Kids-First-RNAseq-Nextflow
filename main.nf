@@ -6,8 +6,8 @@ include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
 include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
 include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 include { CUTADAPT } from './modules/local/cutadapt/main'
-include {STAR_ALIGN } from './modules/local/star/align/main'
-
+include { STAR_ALIGN } from './modules/local/star/align/main'
+include { SAMTOOLS_SORT } from './modules/local/samtools/sort/main'
 
 
 def build_rgs(rg_list, sample){
@@ -72,6 +72,7 @@ workflow preprocess_reads {
     }
     emit:
     fastq_to_align = reads
+    is_paired_end
 }
 
 workflow align_analyze_rnaseq {
@@ -80,10 +81,13 @@ workflow align_analyze_rnaseq {
     readFilesCommand
     outFileNamePrefix
     readFilesManifest
+    samtools_threads
 
 
     main:
     STAR_ALIGN(genomeDir, readFilesCommand, readFilesManifest, outFileNamePrefix)
+    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
+
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
 
@@ -104,12 +108,14 @@ workflow {
     genomeDir = Channel.fromPath(params.genomeDir)
     readFilesCommand = Channel.value(params.readFilesCommand)
 
+    samtools_threads = Channel.value(params.samtools_threads)
+
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference)
     // preprocess_reads.out.fastq_to_align.view()
     // Create STAR reads manifest from fastq object for multi-read group support
     star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
         rg, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', rg].join('\t')
     }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
 
 }

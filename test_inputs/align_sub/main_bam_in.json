@@ -1,7 +1,4 @@
 {
-    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
-    "cutadapt_r2_adapter":  "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTG",
-    "cutadapt_min_len": 20,
     "input_alignment_reads": "BS_X3F8NMS4_subset_rna.cram",
     "sample_id": "BS_X3F8NMS4",
     "reference": "GRCh38.primary_assembly.genome.fa",
