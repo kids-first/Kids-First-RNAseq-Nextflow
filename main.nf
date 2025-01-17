@@ -6,6 +6,7 @@ include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
 include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
 include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 include { CUTADAPT } from './modules/local/cutadapt/main'
+include {STAR_ALIGN } from './modules/local/star/align/main'
 
 
 
@@ -59,16 +60,33 @@ workflow preprocess_reads {
         else {
             is_paired_end = Channel.value(is_paired_end)
         }
+        // use collect to is_paired_end to ensure scatter, so [boolean] is created
         SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end.collect())
     }
     // reformat fastq inputs to match output from alignment conversion block
-    in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f.collect{ file(it,checkIfExists: true) }] } : Channel.empty()
+    in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         CUTADAPT(reads)
+        reads = CUTADAPT.out.fastq_out
     }
     emit:
     fastq_to_align = reads
+}
+
+workflow align_analyze_rnaseq {
+    take:
+    genomeDir
+    readFilesCommand
+    outFileNamePrefix
+    readFilesManifest
+
+
+    main:
+    STAR_ALIGN(genomeDir, readFilesCommand, readFilesManifest, outFileNamePrefix)
+    emit:
+    genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
+
 }
 
 workflow {
@@ -81,7 +99,17 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
+    output_basename = Channel.value(params.output_basename)
+
+    genomeDir = Channel.fromPath(params.genomeDir)
+    readFilesCommand = Channel.value(params.readFilesCommand)
+
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference)
-    preprocess_reads.out.fastq_to_align.collect().view()
+    // preprocess_reads.out.fastq_to_align.view()
+    // Create STAR reads manifest from fastq object for multi-read group support
+    star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
+        rg, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', rg].join('\t')
+    }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest)
 
 }
