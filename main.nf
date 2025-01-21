@@ -8,6 +8,7 @@ include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 include { CUTADAPT } from './modules/local/cutadapt/main'
 include { STAR_ALIGN } from './modules/local/star/align/main'
 include { SAMTOOLS_SORT } from './modules/local/samtools/sort/main'
+include { FASTQ_STRANDEDNESS } from './modules/local/fastq_strandedness/main'
 
 
 def build_rgs(rg_list, sample){
@@ -28,6 +29,9 @@ workflow preprocess_reads {
     sample_id
     threads 
     reference
+    annotation_gtf
+    kallisto_idx
+
 
     main:
 
@@ -66,6 +70,9 @@ workflow preprocess_reads {
     // reformat fastq inputs to match output from alignment conversion block
     in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
+    FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
+    FASTQ_STRANDEDNESS.out.result.view()
+    FASTQ_STRANDEDNESS.out.top_read_len.view()
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         CUTADAPT(reads)
         reads = CUTADAPT.out.fastq_out
@@ -104,18 +111,20 @@ workflow {
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
     output_basename = Channel.value(params.output_basename)
+    gtf_anno = Channel.fromPath(params.gtf_anno)
+    kallisto_idx = Channel.fromPath(params.kallisto_idx)
 
     genomeDir = Channel.fromPath(params.genomeDir)
     readFilesCommand = Channel.value(params.readFilesCommand)
 
     samtools_threads = Channel.value(params.samtools_threads)
 
-    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference)
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
     // preprocess_reads.out.fastq_to_align.view()
     // Create STAR reads manifest from fastq object for multi-read group support
-    star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
-        rg, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', rg].join('\t')
-    }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
+    // star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
+    //     rg, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', rg].join('\t')
+    // }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
+    // align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
 
 }

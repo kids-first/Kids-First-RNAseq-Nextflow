@@ -1,8 +1,10 @@
 {
     "input_alignment_reads": "BS_X3F8NMS4_subset_rna.cram",
     "sample_id": "BS_X3F8NMS4",
-    "reference": "GRCh38.primary_assembly.genome.fa",
-    "genomeDir": "STAR_2.7.10a_GENCODE39.tar.gz",
+    "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
+    "genomeDir": "../RNASEQ_REFS/STAR_2.7.10a_GENCODE39.tar.gz",
     "output_basename": "31160a89-b89b-4f18-8901-7f0fd3205cff",
+    "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
+    "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
     "threads": 8
 }
