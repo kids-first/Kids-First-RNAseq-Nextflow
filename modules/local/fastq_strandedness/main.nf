@@ -15,21 +15,19 @@ process FASTQ_STRANDEDNESS {
     script:
     def reads_in = reads.size() == 2
         ? "--reads_1 ${reads[0]} --reads_2 ${reads[1]}"
-        : "--reads_1 reads[0]"
-    def pseudo_bam = "stranded_test_" + (reads.size() == 2
-        ? './${reads[0].getBaseName().replace(".f*q", "")'
-        : './${reads.getBaseName().replace(".f*q", "")') + "/kallisto_strand_test/pseudoalignments.bam"
+        : "--reads_1 ${reads}"
+    def pseudo_bam = "stranded_test_${reads[0].getBaseName() - ~/.f\w*q$/}/kallisto_strand_test/pseudoalignments.bam"
     """
     check_strandedness \\
     --gtf $annotation_gtf \\
     --kallisto_index $kallisto_idx \\
-    -p \\
     $reads_in \\
     --nreads $nreads > fastq.strandness
     
     TOP_LEN=`samtools view $pseudo_bam \\
     | cut -f 10 \\
-    | perl -ne 'chomp;print length(\$_) . "\n"' | sort | uniq -c | sort -nr -k1,1 | head -n 1 | cut -f 3 -d " "`
+    | perl -ne 'chomp;print length(\$_)."\n"' | sort | uniq -c | sort -nr -k1,1 | head -n 1`
+
     """
 
     stub:

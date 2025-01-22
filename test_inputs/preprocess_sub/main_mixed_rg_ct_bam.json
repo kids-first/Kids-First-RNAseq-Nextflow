@@ -4,6 +4,8 @@
     "input_alignment_reads": ["MIXED_RG_CT/NA12878_1RG.bam", "MIXED_RG_CT/NA12878_2RG.bam"],
     "sample_id": "NA12878_TEST",
     "reference": "Homo_sapiens_assembly38.fasta",
+    "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
+    "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
     "threads": 8,
     "is_paired_end": 1
 }

@@ -19,6 +19,18 @@ def build_rgs(rg_list, sample){
 }
 
 
+def validate_strandness_len(strand_file, len_out, is_paired){
+    def len_vals = len_out.map { info -> ((info =~ /^\s*\d+\s+(\d+)$/)[0][1]).toInteger() }
+    def test = []
+    strand_file.first().eachLine { str ->
+        test.add(str)
+    }
+    println test
+
+    return len_vals
+}
+
+
 workflow preprocess_reads {
     take:
     input_alignment_reads
@@ -71,8 +83,14 @@ workflow preprocess_reads {
     in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
-    FASTQ_STRANDEDNESS.out.result.view()
-    FASTQ_STRANDEDNESS.out.top_read_len.view()
+
+    check = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len, is_paired_end)
+    check.unique().count().map { n ->
+        if (n > 1){
+            error("Inconsistent read lengths")
+        }
+    }
+
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         CUTADAPT(reads)
         reads = CUTADAPT.out.fastq_out
@@ -110,14 +128,14 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
-    output_basename = Channel.value(params.output_basename)
-    gtf_anno = Channel.fromPath(params.gtf_anno)
-    kallisto_idx = Channel.fromPath(params.kallisto_idx)
+    // output_basename = Channel.value(params.output_basename)
+    gtf_anno = Channel.fromPath(params.gtf_anno).first()
+    kallisto_idx = Channel.fromPath(params.kallisto_idx).first()
 
-    genomeDir = Channel.fromPath(params.genomeDir)
-    readFilesCommand = Channel.value(params.readFilesCommand)
+    // genomeDir = Channel.fromPath(params.genomeDir)
+    // readFilesCommand = Channel.value(params.readFilesCommand)
 
-    samtools_threads = Channel.value(params.samtools_threads)
+    // samtools_threads = Channel.value(params.samtools_threads)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
     // preprocess_reads.out.fastq_to_align.view()
