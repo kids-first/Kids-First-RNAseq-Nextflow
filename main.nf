@@ -19,15 +19,14 @@ def build_rgs(rg_list, sample){
 }
 
 
-def validate_strandness_len(strand_file, len_out, is_paired){
+def validate_strandness_len(strand_file, len_out){
+    // Read in strand file data and filter on desired fields
+    def strand_vals = strand_file.map {
+        f -> f.readLines()
+    }.flatten().filter( ~/\w+ReadLength.*|^Data is.*/)
+    // Parse generic top length values
     def len_vals = len_out.map { info -> ((info =~ /^\s*\d+\s+(\d+)$/)[0][1]).toInteger() }
-    def test = []
-    strand_file.first().eachLine { str ->
-        test.add(str)
-    }
-    println test
-
-    return len_vals
+    return [len_vals, strand_vals]
 }
 
 
@@ -83,11 +82,28 @@ workflow preprocess_reads {
     in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
+    // validate read len and strandedness are consistent
+    check = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
+    check[1].branch { v->
+        median: v.startsWith("Median")
+            return v.split(":")[1].toFloat().toInteger()
+        stdev: v.startsWith("Stddev")
+            return v.split(":")[1].toFloat().toInteger()
+        strand: v.startsWith("Data is")
+            return v.split(" ")[-1]
+        other: true
+    }.set { strand_info }
 
-    check = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len, is_paired_end)
-    check.unique().count().map { n ->
+    check[0].unique().count().map { n ->
         if (n > 1){
             error("Inconsistent read lengths")
+        }
+    }
+    strand_info.median.view()
+    strand_info.stdev.view()
+    strand_info.strand.unique().count().map { n ->
+        if (n > 1){
+            error("Inconsistent strandedness")
         }
     }
 
@@ -98,6 +114,9 @@ workflow preprocess_reads {
     emit:
     fastq_to_align = reads
     is_paired_end
+    median_read_len = strand_info.median.first()
+    stdev_read_len = strand_info.stdev.first()
+    strand = strand_info.strand.first()
 }
 
 workflow align_analyze_rnaseq {
