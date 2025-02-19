@@ -83,8 +83,9 @@ workflow preprocess_reads {
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
     FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
     // validate read len and strandedness are consistent
-    check = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
-    check[1].branch { v->
+    (top_read_len, check_strandedness) = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
+    // Median and stdev only output for single end data!
+    check_strandedness.branch { v->
         median: v.startsWith("Median")
             return v.split(":")[1].toFloat().toInteger()
         stdev: v.startsWith("Stddev")
@@ -94,17 +95,24 @@ workflow preprocess_reads {
         other: true
     }.set { strand_info }
 
-    check[0].unique().count().map { n ->
+    top_read_len.unique().count().map { n ->
         if (n > 1){
             error("Inconsistent read lengths")
         }
     }
-    strand_info.median.view()
-    strand_info.stdev.view()
+
     strand_info.strand.unique().count().map { n ->
         if (n > 1){
             error("Inconsistent strandedness")
         }
+    }
+    // Convert metadata to map
+    reads = reads.map {meta, f -> [[read_roup: meta, paired_end: is_paired_end, strand_info: strand_info.strand.unique()], f]}
+    reads = reads.map { meta, f -> 
+        [
+            meta["is_paired_end"] ? meta << [read_length_median: top_read_len.unique()] : meta << [read_length_median: strand_info.median, read_length_stddev: strand_info.stdev],
+            f
+        ]
     }
 
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
@@ -113,10 +121,6 @@ workflow preprocess_reads {
     }
     emit:
     fastq_to_align = reads
-    is_paired_end
-    median_read_len = strand_info.median.first()
-    stdev_read_len = strand_info.stdev.first()
-    strand = strand_info.strand.first()
 }
 
 workflow align_analyze_rnaseq {
@@ -147,21 +151,21 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
-    // output_basename = Channel.value(params.output_basename)
+    output_basename = Channel.value(params.output_basename)
     gtf_anno = Channel.fromPath(params.gtf_anno).first()
     kallisto_idx = Channel.fromPath(params.kallisto_idx).first()
 
-    // genomeDir = Channel.fromPath(params.genomeDir)
-    // readFilesCommand = Channel.value(params.readFilesCommand)
+    genomeDir = Channel.fromPath(params.genomeDir)
+    readFilesCommand = Channel.value(params.readFilesCommand)
 
-    // samtools_threads = Channel.value(params.samtools_threads)
+    samtools_threads = Channel.value(params.samtools_threads)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    // preprocess_reads.out.fastq_to_align.view()
+    preprocess_reads.out.fastq_to_align.view()
     // Create STAR reads manifest from fastq object for multi-read group support
-    // star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
-    //     rg, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', rg].join('\t')
-    // }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
-    // align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
+    star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
+        meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
+    }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
 
 }
