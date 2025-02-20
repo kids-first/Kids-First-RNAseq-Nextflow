@@ -36,6 +36,9 @@ workflow preprocess_reads {
     input_fastq_reads
     line_filter
     is_paired_end
+    read_length_median
+    read_length_stddev
+    strandedness
     max_reads
     sample_id
     threads 
@@ -81,36 +84,41 @@ workflow preprocess_reads {
     // reformat fastq inputs to match output from alignment conversion block
     in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
-    FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
-    // validate read len and strandedness are consistent
-    (top_read_len, check_strandedness) = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
-    // Median and stdev only output for single end data!
-    check_strandedness.branch { v->
-        median: v.startsWith("Median")
-            return v.split(":")[1].toFloat().toInteger()
-        stdev: v.startsWith("Stddev")
-            return v.split(":")[1].toFloat().toInteger()
-        strand: v.startsWith("Data is")
-            return v.split(" ")[-1]
-        other: true
-    }.set { strand_info }
-
-    top_read_len.unique().count().map { n ->
-        if (n > 1){
-            error("Inconsistent read lengths")
+    // only run if a param is missing, otherwise skip
+    if (!params.read_length_median || !params.read_length_stddev || !params.strandedness){
+        FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
+        // validate read len and strandedness are consistent
+        (top_read_len, check_strandedness) = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
+        // Median and stdev only output for single end data!
+        check_strandedness.branch { v->
+            stdev: v.startsWith("Stddev")
+                return v.split(":")[1].toFloat().toInteger()
+            strand: v.startsWith("Data is")
+                return v.split(" ")[-1]
+            other: true
+        }.set { strand_info }
+        if (!params.read_length_median){ 
+            top_read_len.unique().count().map { n ->
+                if (n > 1){
+                    error("Inconsistent read lengths")
+                }
+            }
+            read_length_median = top_read_len.unique()
         }
+        read_length_stddev = !params.read_length_stddev && is_paired_end.map {it} ? strand_info.stdev.unique() : read_length_stddev
     }
-
-    strand_info.strand.unique().count().map { n ->
-        if (n > 1){
-            error("Inconsistent strandedness")
+        strand_info.strand.unique().count().map { n ->
+            if (n > 1){
+                error("Inconsistent strandedness")
+            }
         }
-    }
+    strandedness.view()
+    strand_info = params.strandedness ? strandedness : strand_info.strand.unique()
     // Convert metadata to map
-    reads = reads.map {meta, f -> [[read_roup: meta, paired_end: is_paired_end, strand_info: strand_info.strand.unique()], f]}
+    reads = reads.map {meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strand_info], f]}
     reads = reads.map { meta, f -> 
         [
-            meta["is_paired_end"] ? meta << [read_length_median: top_read_len.unique()] : meta << [read_length_median: strand_info.median, read_length_stddev: strand_info.stdev],
+            meta["is_paired_end"] ?: meta << [read_length_stddev: read_length_stddev],
             f
         ]
     }
@@ -146,6 +154,10 @@ workflow {
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
     input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
     is_paired_end = params.is_paired_end != "" ? params.is_paired_end : ""
+    read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([])
+    read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([])
+    strandedness = params.strandedness ? Channel.value(params.strandedness) : Channel.value([])
+
     max_reads = Channel.value(params.max_reads)
     line_filter = Channel.value(params.line_filter)
     sample_id = Channel.value(params.sample_id)
@@ -160,8 +172,8 @@ workflow {
 
     samtools_threads = Channel.value(params.samtools_threads)
 
-    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    preprocess_reads.out.fastq_to_align.view()
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
+    preprocess_reads.out.fastq_to_align.map {meta, f -> meta['strand_info'].view()}
     // Create STAR reads manifest from fastq object for multi-read group support
     star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
         meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
