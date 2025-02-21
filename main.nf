@@ -10,6 +10,7 @@ include { SAMTOOLS_SORT } from './modules/local/samtools/sort/main'
 include { FASTQ_STRANDEDNESS } from './modules/local/fastq_strandedness/main'
 include { STAR_ALIGN } from './modules/local/star/align/main'
 include { STAR_FUSION } from './modules/local/star/fusion/main'
+include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
 
 
 def build_rgs(rg_list, sample){
@@ -125,8 +126,7 @@ workflow preprocess_reads {
             return "fr-stranded"
         }
     }
-    // Convert metadata to map
-    reads = reads.map {meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strand_info], f]}
+    reads = reads.map { meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strand_info], f]}
     reads = reads.map { meta, f -> 
         [
             meta["is_paired_end"] ?: meta << [read_length_stddev: read_length_stddev],
@@ -147,16 +147,38 @@ workflow align_analyze_rnaseq {
     genomeDir
     readFilesCommand
     outFileNamePrefix
-    readFilesManifest
+    input_fastq_reads
     genome_tar
     genome_untar_path
     samtools_threads
-
+    reference_fasta
+    gtf_anno
+    assembly
 
     main:
+    // Create STAR reads manifest from fastq object for multi-read group support
+    readFilesManifest = input_fastq_reads.map{
+        meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
+    }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
+
+
     STAR_ALIGN(genomeDir, readFilesCommand, readFilesManifest, outFileNamePrefix)
     STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
     SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
+    // Create a value conversion dict as many tools use strand as a param but call it different things
+    // def wf_param_strand = [
+    //     'default': ['RSEM': 'none', 'KALLISTO': 'default', 'RNASEQC': null, 'ARRIBA_FUSION': 'auto'],
+    //     'rf-stranded': ['RSEM': 'reverse', 'KALLISTO': 'rf-stranded', 'RNASEQC': 'rf', 'ARRIBA_FUSION': 'reverse'],
+    //     'fr-stranded': ['RSEM': 'forward', 'KALLISTO': 'fr-stranded', 'RNASEQC': 'fr', 'ARRIBA_FUSION': 'yes']
+    // ]
+    metadata = input_fastq_reads.map{ meta, _fastq -> meta }
+    // Can't eval th evalue directly, but s string function workls because...reasons???
+    arriba_strand = metadata.map{ 
+        it['strand_info'].first().startsWith("rf") ? "reverse" : (it['strand_info'].first().startsWith("fr") ? "yes" : "auto")
+    }
+
+    ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, arriba_strand, assembly)
+
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
@@ -186,13 +208,11 @@ workflow {
     FusionGenome = Channel.fromPath(params.FusionGenome)
     star_fusion_genome_untar_path = Channel.value(params.star_fusion_genome_untar_path)
 
+    assembly = Channel.value(params.assembly)
+
     samtools_threads = Channel.value(params.samtools_threads)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    // Create STAR reads manifest from fastq object for multi-read group support
-    star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
-        meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
-    }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, FusionGenome, star_fusion_genome_untar_path, samtools_threads)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly)
 
 }
