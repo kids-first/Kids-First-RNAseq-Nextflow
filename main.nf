@@ -6,9 +6,10 @@ include { SAMTOOLS_HEAD } from './modules/local/samtools/head/main'
 include { ALIGNMENT_PAIREDNESS } from './modules/local/python/pairedness/main'
 include { SAMTOOLS_FASTQ } from './modules/local/samtools/fastq/main'
 include { CUTADAPT } from './modules/local/cutadapt/main'
-include { STAR_ALIGN } from './modules/local/star/align/main'
 include { SAMTOOLS_SORT } from './modules/local/samtools/sort/main'
 include { FASTQ_STRANDEDNESS } from './modules/local/fastq_strandedness/main'
+include { STAR_ALIGN } from './modules/local/star/align/main'
+include { STAR_FUSION } from './modules/local/star/fusion/main'
 
 
 def build_rgs(rg_list, sample){
@@ -112,8 +113,18 @@ workflow preprocess_reads {
                 error("Inconsistent strandedness")
             }
         }
-    strandedness.view()
-    strand_info = params.strandedness ? strandedness : strand_info.strand.unique()
+    // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
+    strand_info = params.strandedness ? strandedness : strand_info.strand.unique().map { value -> 
+        if (value == "unstranded"){
+            return "default"
+        }
+        if (value.substring(0, 2) == "RF"){
+            return "rf-stranded"
+        }
+        if (value.substring(0, 2) == "FR"){
+            return "fr-stranded"
+        }
+    }
     // Convert metadata to map
     reads = reads.map {meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strand_info], f]}
     reads = reads.map { meta, f -> 
@@ -137,11 +148,14 @@ workflow align_analyze_rnaseq {
     readFilesCommand
     outFileNamePrefix
     readFilesManifest
+    genome_tar
+    genome_untar_path
     samtools_threads
 
 
     main:
     STAR_ALIGN(genomeDir, readFilesCommand, readFilesManifest, outFileNamePrefix)
+    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
     SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
 
     emit:
@@ -169,15 +183,16 @@ workflow {
 
     genomeDir = Channel.fromPath(params.genomeDir)
     readFilesCommand = Channel.value(params.readFilesCommand)
+    FusionGenome = Channel.fromPath(params.FusionGenome)
+    star_fusion_genome_untar_path = Channel.value(params.star_fusion_genome_untar_path)
 
     samtools_threads = Channel.value(params.samtools_threads)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    preprocess_reads.out.fastq_to_align.map {meta, f -> meta['strand_info'].view()}
     // Create STAR reads manifest from fastq object for multi-read group support
     star_reads_manifest = preprocess_reads.out.fastq_to_align.map{
         meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
     }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, samtools_threads)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, star_reads_manifest, FusionGenome, star_fusion_genome_untar_path, samtools_threads)
 
 }

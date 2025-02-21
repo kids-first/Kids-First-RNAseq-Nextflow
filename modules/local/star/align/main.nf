@@ -29,7 +29,7 @@ process STAR_ALIGN {
     --readFilesManifest $readFilesManifest \\
     --outFileNamePrefix "${outFileNamePrefix}." \\
     $star_ext_args \\
-    && pigz .*.tab
+    && pigz *tab
     """
 
 }
