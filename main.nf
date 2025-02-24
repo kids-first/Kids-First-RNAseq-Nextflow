@@ -10,6 +10,7 @@ include { SAMTOOLS_SORT } from './modules/local/samtools/sort/main'
 include { FASTQ_STRANDEDNESS } from './modules/local/fastq_strandedness/main'
 include { STAR_ALIGN } from './modules/local/star/align/main'
 include { STAR_FUSION } from './modules/local/star/fusion/main'
+include { RSEM } from './modules/local/rsem'
 include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
 
 
@@ -115,24 +116,31 @@ workflow preprocess_reads {
             }
         }
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
-    strand_info = params.strandedness ? strandedness : strand_info.strand.unique().map { value -> 
-        if (value == "unstranded"){
+    strandedness = params.strandedness ? strandedness : strand_info.strand.unique().map { value -> 
+        if (value.toString() == "unstranded"){
             return "default"
         }
-        if (value.substring(0, 2) == "RF"){
+        if (value.toString().substring(0, 2) == "RF"){
             return "rf-stranded"
         }
-        if (value.substring(0, 2) == "FR"){
+        if (value.toString().substring(0, 2) == "FR"){
             return "fr-stranded"
         }
     }
-    reads = reads.map { meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strand_info], f]}
+    reads = reads.map { meta, f -> [[read_roup: meta, paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strandedness], f]}
     reads = reads.map { meta, f -> 
         [
-            meta["is_paired_end"] ?: meta << [read_length_stddev: read_length_stddev],
+            !meta["paired_end"] ?: meta << [read_length_stddev: read_length_stddev],
             f
         ]
     }
+
+    added_metadata = [paired_end: is_paired_end, read_length_median: read_length_median, strand_info: strandedness]
+    if (!added_metadata['paired_end']){
+        added_metadata << [read_length_stddev: read_length_stddev]
+    } 
+    
+    // println added_metadata
 
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         CUTADAPT(reads)
@@ -140,6 +148,7 @@ workflow preprocess_reads {
     }
     emit:
     fastq_to_align = reads
+    added_metadata = added_metadata
 }
 
 workflow align_analyze_rnaseq {
@@ -155,13 +164,18 @@ workflow align_analyze_rnaseq {
     gtf_anno
     assembly
 
+    RSEMgenome
+    added_metadata
+
     main:
     // Create STAR reads manifest from fastq object for multi-read group support
+    metadata = input_fastq_reads.map{ meta, _fastq -> meta }
+    // metadata.view()
     readFilesManifest = input_fastq_reads.map{
-        meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta['read_group']].join('\t')
+        meta, fastq -> [fastq instanceof List ? fastq.join('\t'): fastq + '\t-', meta.read_group].join('\t')
     }.collectFile( name: 'star_reads_manifest.txt', newLine: true)
 
-
+    added_metadata.view()
     STAR_ALIGN(genomeDir, readFilesCommand, readFilesManifest, outFileNamePrefix)
     STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
     SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
@@ -171,14 +185,22 @@ workflow align_analyze_rnaseq {
     //     'rf-stranded': ['RSEM': 'reverse', 'KALLISTO': 'rf-stranded', 'RNASEQC': 'rf', 'ARRIBA_FUSION': 'reverse'],
     //     'fr-stranded': ['RSEM': 'forward', 'KALLISTO': 'fr-stranded', 'RNASEQC': 'fr', 'ARRIBA_FUSION': 'yes']
     // ]
-    metadata = input_fastq_reads.map{ meta, _fastq -> meta }
-    // Can't eval th evalue directly, but s string function workls because...reasons???
-    arriba_strand = metadata.map{ 
-        it['strand_info'].first().startsWith("rf") ? "reverse" : (it['strand_info'].first().startsWith("fr") ? "yes" : "auto")
+    // Can't eval the value directly, but a string function works because...reasons???
+    wf_strand_info = added_metadata.map{ 
+        it.strand_info
     }
+    wf_strand_info.view()
 
-    ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, arriba_strand, assembly)
+        // [ "ARRIBA_FUSION": it.strand_info.first().startsWith("rf") ? "reverse" : (it.strand_info.first().startsWith("fr") ? "yes" : "auto"),
+        // "RSEM": it.strand_info.first().startsWith("rf") ? "reverse" : (it.strand_info.first().startsWith("fr") ? "forward" : "none")
+        // ]
 
+    // KALLISTO_strand = metadata.map{ 
+    //     it.strand_info.first().startsWith("rf") ? "rf-stranded" : (it.strand_info.first().startsWith("fr") ? "fr-stranded" : "default")
+    // }
+
+    // ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, strand_info.map {it.ARRIBA_FUSION}, assembly)
+    // RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, metadata.map { it.paired_end.first() } , strand_info.map{ it.RSEM } )
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
@@ -212,7 +234,9 @@ workflow {
 
     samtools_threads = Channel.value(params.samtools_threads)
 
+    RSEM_genome = Channel.fromPath(params.RSEM_genome)
+
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata)
 
 }
