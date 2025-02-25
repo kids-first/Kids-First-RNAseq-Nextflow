@@ -5,7 +5,8 @@ process STAR_ALIGN {
     input:
     path(genomeDir)
     val(readFilesCommand)
-    val(readFilesManifest)
+    val(read_groups)
+    path(fastq_reads)
     val(outFileNamePrefix)
 
     output:
@@ -21,12 +22,20 @@ process STAR_ALIGN {
 
     script:
     def star_ext_args = task.ext.args ?: ''
+    def manifest_str = ""
+    fastq_reads.each{ v -> println v}
+    read_groups.each{ v -> println v}
+    println manifest_str
+
     """
-    tar -I pigz -xvf $genomeDir \\
+    echo -e poop > rgs.txt \\
+    && echo ${fastq_reads} | tr " " "\t" > fq_list.txt \\
+    && paste fq_list.txt rgs.txt > star_reads_manifest.txt \\
+    && tar -I pigz -xvf $genomeDir \\
     && STAR \\
     --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
-    --readFilesManifest $readFilesManifest \\
+    --readFilesManifest star_reads_manifest.txt \\
     --outFileNamePrefix "${outFileNamePrefix}." \\
     $star_ext_args \\
     && pigz *tab

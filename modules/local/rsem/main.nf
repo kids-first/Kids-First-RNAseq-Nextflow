@@ -21,7 +21,7 @@ process RSEM {
     --no-bam-output \\
     --alignments \\
     --strandedness $strandedness \\
-    ${pairedness} ? "--paired-end" : ""} \\
+    ${pairedness ? "--paired-end" : ""} \\
     $rsem_ext_args \\
     $transcriptome_bam \\
     ./${rsem_genome_tar.getBaseName().replace(".tar", "")}/${rsem_genome_tar.getBaseName().replace(".tar", "")} \\
