@@ -3,7 +3,7 @@ process ARRIBA_FUSION {
     container "pgc-images.sbgenomics.com/d3b-bixu/arriba:2.2.1"
 
     input:
-    path(genome_aligned_bam)
+    tuple path(genome_aligned_bam), path(genome_aligned_bai)
     path(reference_fasta)
     path(gtf_anno)
     val(outFileNamePrefix)
@@ -23,7 +23,7 @@ process ARRIBA_FUSION {
     -s $arriba_strand_flag \\
     -o ${outFileNamePrefix}.arriba_2.2.1.fusions.tsv \\
     -O ${outFileNamePrefix}.arriba_2.2.1.discarded_fusions.tsv \\
-    $arriba_ext_args \\
+    $arriba_ext_args
     """
 
 }

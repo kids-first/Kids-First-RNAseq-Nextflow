@@ -12,6 +12,8 @@ include { STAR_ALIGN } from './modules/local/star/align/main'
 include { STAR_FUSION } from './modules/local/star/fusion/main'
 include { RSEM } from './modules/local/rsem'
 include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
+include { ARRIBA_DRAW } from './modules/local/arriba/draw/main'
+include { ANNOFUSE } from './modules/local/annofuse/main'
 
 
 def build_rgs(rg_list, sample){
@@ -157,11 +159,12 @@ workflow align_analyze_rnaseq {
     RSEMgenome
     added_metadata
 
+    sample_name
+
     main:
 
     rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
     fqs = input_fastq_reads.map { _rg, fq -> fq}.collect()
-
 
      // Assign added metadata to named variables for clarity
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
@@ -180,9 +183,11 @@ workflow align_analyze_rnaseq {
     wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
         "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")}
         ]
-
-    ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
-    RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM )
+    sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
+    ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
+    ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
+    RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
+    ANNOFUSE(ARRIBA_FUSION.out.arriba_fusions, STAR_FUSION.out.abridged_coding, RSEM.out.gene_out, sample_name, outFileNamePrefix)
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
@@ -219,6 +224,6 @@ workflow {
     RSEM_genome = Channel.fromPath(params.RSEM_genome)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata, sample_id)
 
 }
