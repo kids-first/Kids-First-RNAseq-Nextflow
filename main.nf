@@ -13,7 +13,7 @@ include { STAR_FUSION } from './modules/local/star/fusion/main'
 include { RSEM } from './modules/local/rsem'
 include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
 include { ARRIBA_DRAW } from './modules/local/arriba/draw/main'
-include { ANNOFUSE } from './modules/local/annofuse/main'
+include { ANNOFUSE } from './modules/local/annofuse/tool/main'
 
 
 def build_rgs(rg_list, sample){
@@ -141,6 +141,22 @@ workflow preprocess_reads {
     emit:
     fastq_to_align = reads
     added_metadata = added_metadata
+}
+
+workflow annofuse_subworkflow {
+    take:
+    sample_name
+    FusionGenome
+    genome_untar_path
+    rsem_expr_file
+    arriba_output_file
+    col_num
+    star_fusion_output_file
+    output_basename
+
+    main:
+
+    ANNOFUSE(ARRIBA_FUSION.out.arriba_fusions, STAR_FUSION.out.abridged_coding, RSEM.out.gene_out, sample_name, outFileNamePrefix)
 }
 
 workflow align_analyze_rnaseq {
