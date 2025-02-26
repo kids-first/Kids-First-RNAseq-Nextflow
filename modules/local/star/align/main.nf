@@ -7,6 +7,7 @@ process STAR_ALIGN {
     val(readFilesCommand)
     val(read_groups)
     path(fastq_reads)
+    val(pe_flag)
     val(outFileNamePrefix)
 
     output:
@@ -22,15 +23,18 @@ process STAR_ALIGN {
 
     script:
     def star_ext_args = task.ext.args ?: ''
+    // Use pe_flag to help determine whether to pull two files at a time, or one for each RG
     def manifest_str = ""
-    fastq_reads.each{ v -> println v}
-    read_groups.each{ v -> println v}
-    println manifest_str
-
+    def i = 0
+    
+    read_groups.each{ v ->
+            manifest_str +=  fastq_reads[i] + "\t" + (pe_flag ? fastq_reads[i+1] : "-" ) + "\t" + v + "\n";
+            if (pe_flag){
+                i += 2
+            }
+        }
     """
-    echo -e poop > rgs.txt \\
-    && echo ${fastq_reads} | tr " " "\t" > fq_list.txt \\
-    && paste fq_list.txt rgs.txt > star_reads_manifest.txt \\
+    echo -e "$manifest_str" > star_reads_manifest.txt \\
     && tar -I pigz -xvf $genomeDir \\
     && STAR \\
     --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\

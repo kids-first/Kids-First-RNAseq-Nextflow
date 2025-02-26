@@ -4,7 +4,9 @@
     "output_basename": "SRR7268790_TEST",
     "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
     "genomeDir": "../RNASEQ_REFS/STAR_2.7.10a_GENCODE39.tar.gz",
+    "FusionGenome": "../RNASEQ_REFS/GRCh38_v39_CTAT_lib_Mar242022.CUSTOM.tar.gz",
     "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
     "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
-    "threads": 8
+    "threads": 8,
+    "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz"
 }

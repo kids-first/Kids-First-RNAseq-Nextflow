@@ -159,42 +159,33 @@ workflow align_analyze_rnaseq {
 
     main:
 
-    rgs = input_fastq_reads.map { rg, _fq -> rg}
-    fqs = input_fastq_reads.map { _rg, fq -> fq}
-    rgs.view()
-    fqs.view()
+    rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
+    fqs = input_fastq_reads.map { _rg, fq -> fq}.collect()
 
-    test = rgs.collect(sort: true)
-    test.view()
-    test2 = fqs.collect(sort: true)
-    test2.view()
 
+     // Assign added metadata to named variables for clarity
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
-    //STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, outFileNamePrefix)
-    // STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
-    // SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
+    read_length_stddev = is_paired_end ? added_metadata.last() : ""
+
+    STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end, outFileNamePrefix)
+    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
+    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
     // Create a value conversion dict as many tools use strand as a param but call it different things
     // def wf_param_strand = [
     //     'default': ['RSEM': 'none', 'KALLISTO': 'default', 'RNASEQC': null, 'ARRIBA_FUSION': 'auto'],
     //     'rf-stranded': ['RSEM': 'reverse', 'KALLISTO': 'rf-stranded', 'RNASEQC': 'rf', 'ARRIBA_FUSION': 'reverse'],
     //     'fr-stranded': ['RSEM': 'forward', 'KALLISTO': 'fr-stranded', 'RNASEQC': 'fr', 'ARRIBA_FUSION': 'yes']
     // ]
-    // Can't eval the value directly, but a string function works because...reasons???
-    // Assign added metadata to named variables for clarity
-    
-    
-    // read_length_stddev = is_paired_end ? added_metadata.last() : ""
 
+    wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
+        "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")}
+        ]
 
-    // wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
-    //     "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")}
-    //     ]
+    ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
+    RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM )
 
-    // ARRIBA_FUSION(SAMTOOLS_SORT.out.sorted_bam, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
-    // RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM )
-
-    // emit:
-    // genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
+    emit:
+    genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
 
 }
 
