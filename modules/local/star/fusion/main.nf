@@ -5,7 +5,6 @@ process STAR_FUSION {
     input:
     path(genome_tar)
     path(Chimeric_junction)
-    val(genome_untar_path)
     val(output_basename)
 
     output:
@@ -17,7 +16,6 @@ process STAR_FUSION {
     """
     tar -I pigz -xvf $genome_tar \\
     && /usr/local/STAR-Fusion/STAR-Fusion \\
-    --genome_lib_dir ./$genome_untar_path \\
     --output_dir STAR-Fusion_outdir \\
     -J $Chimeric_junction \\
     $star_ext_args \\

@@ -13,6 +13,8 @@ include { STAR_FUSION } from './modules/local/star/fusion/main'
 include { RSEM } from './modules/local/rsem'
 include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
 include { ARRIBA_DRAW } from './modules/local/arriba/draw/main'
+include { FORMAT_ARRIBA } from './modules/local/annofuse/format_arriba/main'
+include { ANNOTATE_ARRIBA } from './modules/local/annofuse/annotate_arriba/main'
 include { ANNOFUSE } from './modules/local/annofuse/tool/main'
 
 
@@ -145,18 +147,17 @@ workflow preprocess_reads {
 
 workflow annofuse_subworkflow {
     take:
-    sample_name
-    FusionGenome
-    genome_untar_path
-    rsem_expr_file
     arriba_output_file
-    col_num
+    sample_name
+    fusion_annotator_tar
+    rsem_expr_file
     star_fusion_output_file
     output_basename
 
     main:
-
-    ANNOFUSE(ARRIBA_FUSION.out.arriba_fusions, STAR_FUSION.out.abridged_coding, RSEM.out.gene_out, sample_name, outFileNamePrefix)
+    FORMAT_ARRIBA(arriba_output_file, output_basename)
+    ANNOTATE_ARRIBA(FORMAT_ARRIBA.out.formatted_fusion_tsv, fusion_annotator_tar, output_basename)
+    ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_name, output_basename)
 }
 
 workflow align_analyze_rnaseq {
@@ -166,7 +167,6 @@ workflow align_analyze_rnaseq {
     outFileNamePrefix
     input_fastq_reads
     genome_tar
-    genome_untar_path
     samtools_threads
     reference_fasta
     gtf_anno
@@ -174,8 +174,6 @@ workflow align_analyze_rnaseq {
 
     RSEMgenome
     added_metadata
-
-    sample_name
 
     main:
 
@@ -187,7 +185,7 @@ workflow align_analyze_rnaseq {
     read_length_stddev = is_paired_end ? added_metadata.last() : ""
 
     STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end, outFileNamePrefix)
-    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, genome_untar_path, outFileNamePrefix)
+    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, outFileNamePrefix)
     SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
     // Create a value conversion dict as many tools use strand as a param but call it different things
     // def wf_param_strand = [
@@ -203,11 +201,12 @@ workflow align_analyze_rnaseq {
     ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
     ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
     RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
-    ANNOFUSE(ARRIBA_FUSION.out.arriba_fusions, STAR_FUSION.out.abridged_coding, RSEM.out.gene_out, sample_name, outFileNamePrefix)
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
-
+    arriba_fusion_results = ARRIBA_FUSION.out.arriba_fusions
+    RSEM_gene = RSEM.out.gene_out
+    STARFusion_results = STAR_FUSION.out.abridged_coding
 }
 
 workflow {
@@ -231,7 +230,7 @@ workflow {
     genomeDir = Channel.fromPath(params.genomeDir)
     readFilesCommand = Channel.value(params.readFilesCommand)
     FusionGenome = Channel.fromPath(params.FusionGenome)
-    star_fusion_genome_untar_path = Channel.value(params.star_fusion_genome_untar_path)
+    fusion_annotator_tar = Channel.fromPath(params.fusion_annotator_tar)
 
     assembly = Channel.value(params.assembly)
 
@@ -240,6 +239,7 @@ workflow {
     RSEM_genome = Channel.fromPath(params.RSEM_genome)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, star_fusion_genome_untar_path, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata, sample_id)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata)
+    annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
 
 }

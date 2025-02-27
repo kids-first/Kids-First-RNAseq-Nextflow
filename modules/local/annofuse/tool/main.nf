@@ -24,10 +24,10 @@ process ANNOFUSE {
     fi
 
     annoFusePerSample.R \\
-    --fusionfileArriba $arriba_formatted_fusions
-    --fusionfileStarFusion $starfusion_formatted_fusions
-    --expressionFile $rsem_expr_file
-    --tumorID $sample_name
+    --fusionfileArriba $arriba_formatted_fusions \\
+    --fusionfileStarFusion $starfusion_formatted_fusions \\
+    --expressionFile $rsem_expr_file \\
+    --tumorID $sample_name \\
     --outputfile ${output_basename}.annoFuse_filter.tsv
 
     """
