@@ -16,6 +16,7 @@ include { ARRIBA_DRAW } from './modules/local/arriba/draw/main'
 include { FORMAT_ARRIBA } from './modules/local/annofuse/format_arriba/main'
 include { ANNOTATE_ARRIBA } from './modules/local/annofuse/annotate_arriba/main'
 include { ANNOFUSE } from './modules/local/annofuse/tool/main'
+include { RMATS } from './modules/local/rmats/tool/main'
 
 
 def build_rgs(rg_list, sample){
@@ -160,6 +161,19 @@ workflow annofuse_subworkflow {
     ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_name, output_basename)
 }
 
+workflow rmats_subworkflow {
+    take:
+    gtf_annotation
+    sample_1_bams
+    read_length
+    read_type
+    strandedness
+    output_basename
+
+    main:
+    RMATS(gtf_annotation, sample_1_bams, read_length, read_type, strandedness, output_basename)
+
+}
 workflow align_analyze_rnaseq {
     take:
     genomeDir
@@ -241,5 +255,8 @@ workflow {
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
     align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
-
+    added_metadata = preprocess_reads.out.added_metadata
+    (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
+    rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
+    rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
 }
