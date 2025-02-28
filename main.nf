@@ -19,6 +19,8 @@ include { ANNOTATE_ARRIBA } from './modules/local/annofuse/annotate_arriba/main'
 include { ANNOFUSE } from './modules/local/annofuse/tool/main'
 include { RMATS } from './modules/local/rmats/tool/main'
 include { AWK_JC_FILTER } from './modules/local/rmats/filter/main'
+include { RNASEQC } from './modules/local/rnaseqc/main'
+include {T1K } from './modules/local/t1k/main'
 
 
 def build_rgs(rg_list, sample){
@@ -188,21 +190,29 @@ workflow rmats_subworkflow {
 }
 workflow align_analyze_rnaseq {
     take:
+    //STAR
     genomeDir
     readFilesCommand
+    // Many
     outFileNamePrefix
     input_fastq_reads
     genome_tar
     samtools_threads
     reference_fasta
     gtf_anno
+    // ARRIBA
     assembly
-
+    //RSEM
     RSEMgenome
-
+    // kallisto
     kallisto_idx
     sample_id
-
+    // RNAseqc
+    RNAseQC_GTF
+    // T1K
+    hla_rna_ref_seqs
+    hla_rna_gene_coords
+    // From preprocess
     added_metadata
 
     main:
@@ -217,21 +227,19 @@ workflow align_analyze_rnaseq {
     STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, outFileNamePrefix)
     SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
     // Create a value conversion dict as many tools use strand as a param but call it different things
-    // def wf_param_strand = [
-    //     'default': ['RSEM': 'none', 'KALLISTO': 'default', 'RNASEQC': null, 'ARRIBA_FUSION': 'auto'],
-    //     'rf-stranded': ['RSEM': 'reverse', 'KALLISTO': 'rf-stranded', 'RNASEQC': 'rf', 'ARRIBA_FUSION': 'reverse'],
-    //     'fr-stranded': ['RSEM': 'forward', 'KALLISTO': 'fr-stranded', 'RNASEQC': 'fr', 'ARRIBA_FUSION': 'yes']
-    // ]
 
     wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
         "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")},
-        "KALLISTO": strandedness.map{it.startsWith("rf") ? "rf-stranded" : (it.startsWith("fr") ? "fr-stranded" : "")}
+        "KALLISTO": strandedness.map{it.startsWith("rf") ? "rf-stranded" : (it.startsWith("fr") ? "fr-stranded" : "")},
+        "RNASEQC": strandedness.map{it.startsWith("rf") ? "rf" : (it.startsWith("fr") ? "fr" : "")}
         ]
     KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, sample_id, read_length_stddev, read_length_median, is_paired_end)
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
     ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
     ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
     RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
+    RNASEQC(RNAseQC_GTF, sorted_bam_bai, wf_strand_info["RNASEQC"], is_paired_end)
+    T1K(sorted_bam_bai, hla_rna_ref_seqs, hla_rna_gene_coords, outFileNamePrefix)
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
@@ -248,7 +256,6 @@ workflow {
     read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([])
     read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([])
     strandedness = params.strandedness ? Channel.value(params.strandedness) : Channel.value([])
-
     max_reads = Channel.value(params.max_reads)
     line_filter = Channel.value(params.line_filter)
     sample_id = Channel.value(params.sample_id)
@@ -257,17 +264,23 @@ workflow {
     output_basename = Channel.value(params.output_basename)
     gtf_anno = Channel.fromPath(params.gtf_anno).first()
     kallisto_idx = Channel.fromPath(params.kallisto_idx).first()
-
+    // STAR
     genomeDir = Channel.fromPath(params.genomeDir)
     readFilesCommand = Channel.value(params.readFilesCommand)
+    // STAR Fusion
     FusionGenome = Channel.fromPath(params.FusionGenome)
+    // arriba
     fusion_annotator_tar = Channel.fromPath(params.fusion_annotator_tar)
-
     assembly = Channel.value(params.assembly)
 
     samtools_threads = Channel.value(params.samtools_threads)
-
+    // RSEM
     RSEM_genome = Channel.fromPath(params.RSEM_genome)
+    // RNASeQC
+    RNAseQC_GTF = Channel.fromPath(params.RNAseQC_GTF)
+    // T1K
+    hla_rna_ref_seqs = Channel.fromPath(params.hla_rna_ref_seqs)
+    hla_rna_gene_coords = Channel.fromPath(params.hla_rna_gene_coords)
 
     preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
 
@@ -275,7 +288,7 @@ workflow {
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
     rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
 
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
     rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
 }

@@ -9,5 +9,8 @@
     "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
     "threads": 8,
     "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz",
-    "fusion_annotator_tar": "../RNASEQ_REFS/GRCh38_v39_fusion_annot_custom.tar.gz"
+    "fusion_annotator_tar": "../RNASEQ_REFS/GRCh38_v39_fusion_annot_custom.tar.gz",
+    "RNAseQC_GTF": "../RNASEQ_REFS/gencode.v39.primary_assembly.rnaseqc.unstranded.gtf",
+    "hla_rna_ref_seqs": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_seq.fa",
+    "hla_rna_gene_coords": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_coord.fa"
 }

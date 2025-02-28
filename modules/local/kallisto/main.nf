@@ -31,8 +31,4 @@ process KALLISTO {
 
     """
 
-    stub:
-    """
-    
-    """
 }
