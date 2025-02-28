@@ -11,6 +11,7 @@ include { FASTQ_STRANDEDNESS } from './modules/local/fastq_strandedness/main'
 include { STAR_ALIGN } from './modules/local/star/align/main'
 include { STAR_FUSION } from './modules/local/star/fusion/main'
 include { RSEM } from './modules/local/rsem'
+include { KALLISTO } from './modules/local/kallisto/main'
 include { ARRIBA_FUSION } from './modules/local/arriba/fusion/main'
 include { ARRIBA_DRAW } from './modules/local/arriba/draw/main'
 include { FORMAT_ARRIBA } from './modules/local/annofuse/format_arriba/main'
@@ -198,10 +199,13 @@ workflow align_analyze_rnaseq {
     assembly
 
     RSEMgenome
+
+    kallisto_idx
+    sample_id
+
     added_metadata
 
     main:
-
     rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
     fqs = input_fastq_reads.map { _rg, fq -> fq}.collect()
 
@@ -220,8 +224,10 @@ workflow align_analyze_rnaseq {
     // ]
 
     wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
-        "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")}
+        "RSEM": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "forward" : "none")},
+        "KALLISTO": strandedness.map{it.startsWith("rf") ? "rf-stranded" : (it.startsWith("fr") ? "fr-stranded" : "")}
         ]
+    KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, sample_id, read_length_stddev, read_length_median, is_paired_end)
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
     ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
     ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
@@ -269,7 +275,7 @@ workflow {
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
     rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
 
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, preprocess_reads.out.added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
     rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
 }
