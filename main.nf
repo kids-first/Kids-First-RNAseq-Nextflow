@@ -96,9 +96,22 @@ workflow preprocess_reads {
         SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end.collect())
     }
     // reformat fastq inputs to match output from alignment conversion block
-    
-    in_fq_formatted = params.input_fastq_reads ? Channel.fromList(input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
+    in_fq_formatted = params.input_fastq_reads ? input_fastq_reads.map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
+    // Set PE channel value flag if not set already
+    if (is_paired_end instanceof Boolean){
+        is_paired_end = Channel.value(is_paired_end)
+    }
+    if (is_paired_end == ""){
+        is_paired_end = reads.map{ _reads, f ->
+            if (f instanceof List){
+                return true
+            }
+            else{
+                return false
+            }
+        }.unique()
+    }
     // only run if a param is missing, otherwise skip
     if (!params.read_length_median || !params.read_length_stddev || !params.strandedness){
         FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
@@ -122,11 +135,11 @@ workflow preprocess_reads {
         }
         read_length_stddev = !params.read_length_stddev && is_paired_end.map {it} ? strand_info.stdev.unique() : read_length_stddev
     }
-        strand_info.strand.unique().count().map { n ->
-            if (n > 1){
-                error("Inconsistent strandedness")
-            }
+    strand_info.strand.unique().count().map { n ->
+        if (n > 1){
+            error("Inconsistent strandedness")
         }
+    }
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
     strandedness = params.strandedness ? strandedness : strand_info.strand.unique().map { value -> 
         if (value.toString() == "unstranded"){
@@ -275,7 +288,7 @@ workflow align_analyze_rnaseq {
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
-    input_fastq_reads = params.input_fastq_reads ? params.input_fastq_reads : Channel.value([])
+    input_fastq_reads = params.input_fastq_reads ? Channel.fromList(params.input_fastq_reads) : Channel.value([])
     is_paired_end = params.is_paired_end != "" ? params.is_paired_end : ""
     read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([])
     read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([])
