@@ -17,7 +17,7 @@ process KALLISTO {
     script:
     def read_line = ""
     read_line += is_paired_end ? "" : "--single -l $avg_frag_len -s $std_dev "
-    read_line += reads
+    read_line += reads instanceof List ? reads.join(" ") : reads
     """
     kallisto quant \\
     -i $transcript_idx \\

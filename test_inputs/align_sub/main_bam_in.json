@@ -2,11 +2,17 @@
     "input_alignment_reads": "BS_X3F8NMS4_subset_rna.cram",
     "sample_id": "BS_X3F8NMS4",
     "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
+    "reference_index": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa.fai",
     "genomeDir": "../RNASEQ_REFS/STAR_2.7.10a_GENCODE39.tar.gz",
     "FusionGenome": "../RNASEQ_REFS/GRCh38_v39_CTAT_lib_Mar242022.CUSTOM.tar.gz",
     "output_basename": "31160a89-b89b-4f18-8901-7f0fd3205cff",
     "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
     "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
     "threads": 8,
-    "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz"
+    "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz",
+    "fusion_annotator_tar": "../RNASEQ_REFS/GRCh38_v39_fusion_annot_custom.tar.gz",
+    "RNAseQC_GTF": "../RNASEQ_REFS/gencode.v39.primary_assembly.rnaseqc.stranded.gtf",
+    "hla_rna_ref_seqs": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_seq.fa",
+    "hla_rna_gene_coords": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_coord.fa"
+
 }

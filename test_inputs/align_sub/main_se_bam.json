@@ -3,6 +3,7 @@
     "sample_id": "SRR7268790_TEST",
     "output_basename": "SRR7268790_TEST",
     "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
+    "reference_index": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa.fai",
     "genomeDir": "../RNASEQ_REFS/STAR_2.7.10a_GENCODE39.tar.gz",
     "FusionGenome": "../RNASEQ_REFS/GRCh38_v39_CTAT_lib_Mar242022.CUSTOM.tar.gz",
     "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",

@@ -20,7 +20,9 @@ include { ANNOFUSE } from './modules/local/annofuse/tool/main'
 include { RMATS } from './modules/local/rmats/tool/main'
 include { AWK_JC_FILTER } from './modules/local/rmats/filter/main'
 include { RNASEQC } from './modules/local/rnaseqc/main'
-include {T1K } from './modules/local/t1k/main'
+include { T1K } from './modules/local/t1k/main'
+include { SAMTOOLS_VIEW } from './modules/local/samtools/view/main'
+include { TAR_GZ } from './modules/local/ubuntu/tar_gz/main'
 
 
 def build_rgs(rg_list, sample){
@@ -147,6 +149,7 @@ workflow preprocess_reads {
     }
     emit:
     fastq_to_align = reads
+    cutadapt_stats = params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff ? CUTADAPT.out.cutadapt_metrics : Channel.value()
     added_metadata = added_metadata
 }
 
@@ -163,6 +166,9 @@ workflow annofuse_subworkflow {
     FORMAT_ARRIBA(arriba_output_file, output_basename)
     ANNOTATE_ARRIBA(FORMAT_ARRIBA.out.formatted_fusion_tsv, fusion_annotator_tar, output_basename)
     ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_name, output_basename)
+
+    emit:
+    annofuse_filtered_fusions_tsv = ANNOFUSE.out.filtered_fusions_tsv
 }
 
 workflow rmats_subworkflow {
@@ -199,6 +205,7 @@ workflow align_analyze_rnaseq {
     genome_tar
     samtools_threads
     reference_fasta
+    reference_index
     gtf_anno
     // ARRIBA
     assembly
@@ -234,18 +241,35 @@ workflow align_analyze_rnaseq {
         "RNASEQC": strandedness.map{it.startsWith("rf") ? "rf" : (it.startsWith("fr") ? "fr" : "")}
         ]
     KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, sample_id, read_length_stddev, read_length_median, is_paired_end)
+
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
     ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
     ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
     RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
     RNASEQC(RNAseQC_GTF, sorted_bam_bai, wf_strand_info["RNASEQC"], is_paired_end)
+    TAR_GZ(RNASEQC.out.Gene_TPM, RNASEQC.out.Gene_count, RNASEQC.out.Exon_count, outFileNamePrefix)
     T1K(sorted_bam_bai, hla_rna_ref_seqs, hla_rna_gene_coords, outFileNamePrefix)
+
+    reference_fai = reference_fasta.combine(reference_index)
+    SAMTOOLS_VIEW(reference_fai, sorted_bam_bai)
+
 
     emit:
     genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
-    arriba_fusion_results = ARRIBA_FUSION.out.arriba_fusions
-    RSEM_gene = RSEM.out.gene_out
+    STAR_sorted_genomic_cram = SAMTOOLS_VIEW.out.cram
+    STAR_chimeric_junctions = STAR_FUSION.out.chimeric_junction_compressed
+    STAR_gene_count = STAR_ALIGN.out.gene_counts
+    STAR_junctions_out = STAR_ALIGN.out.junctions_out
+    STAR_final_log = STAR_ALIGN.out.log_final_out
     STARFusion_results = STAR_FUSION.out.abridged_coding
+    arriba_fusion_results = ARRIBA_FUSION.out.arriba_fusions
+    arriba_fusion_viz = ARRIBA_DRAW.out.arriba_pdf
+    RSEM_isoform = RSEM.out.isoform_out
+    RSEM_gene = RSEM.out.gene_out
+    RNASeQC_Metrics = RNASEQC.out.Metrics
+    RNASeQC_counts = TAR_GZ.out.RNASeQC_counts
+    kallisto_Abundance = KALLISTO.out.abundance_out
+    t1k_genotype_tsv = T1K.out.genotype_tsv
 }
 
 workflow {
@@ -261,6 +285,7 @@ workflow {
     sample_id = Channel.value(params.sample_id)
     threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
+    reference_index = Channel.fromPath(params.reference_index).first()
     output_basename = Channel.value(params.output_basename)
     gtf_anno = Channel.fromPath(params.gtf_anno).first()
     kallisto_idx = Channel.fromPath(params.kallisto_idx).first()
@@ -288,7 +313,8 @@ workflow {
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
     rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
 
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, reference_index, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
     rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
+
 }

@@ -10,7 +10,7 @@ process ARRIBA_DRAW {
     val(assembly)
 
     output:
-    path('*pdf'), emit: arriba_fusions
+    path('*pdf'), emit: arriba_pdf
 
     script:
     def arriba_ext_args = task.ext.args ?: ''
