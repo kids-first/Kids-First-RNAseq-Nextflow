@@ -8,7 +8,6 @@
     "output_basename": "31160a89-b89b-4f18-8901-7f0fd3205cff",
     "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
     "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
-    "threads": 8,
     "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz",
     "fusion_annotator_tar": "../RNASEQ_REFS/GRCh38_v39_fusion_annot_custom.tar.gz",
     "RNAseQC_GTF": "../RNASEQ_REFS/gencode.v39.primary_assembly.rnaseqc.stranded.gtf",

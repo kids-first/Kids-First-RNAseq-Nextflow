@@ -8,7 +8,7 @@ include { rmats_subworkflow } from './subworkflows/local/rmats_subworkflow/main'
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([])
-    input_fastq_reads = params.input_fastq_reads ? Channel.fromList(params.input_fastq_reads) : Channel.value([])
+    input_fastq_reads = params.input_fastq_reads ? Channel.fromList(params.input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
     is_paired_end = params.is_paired_end != "" ? params.is_paired_end : ""
     read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([])
     read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([])

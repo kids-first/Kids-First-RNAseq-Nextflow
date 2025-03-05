@@ -79,8 +79,7 @@ workflow preprocess_reads {
         SAMTOOLS_FASTQ(star_rg_list, reference, is_paired_end.collect())
     }
     // reformat fastq inputs to match output from alignment conversion block
-    in_fq_formatted = params.input_fastq_reads ? input_fastq_reads.map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()
-    reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(in_fq_formatted): in_fq_formatted
+    reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(input_fastq_reads): input_fastq_reads
     // Set PE channel value flag if not set already
     if (is_paired_end instanceof Boolean){
         is_paired_end = Channel.value(is_paired_end)

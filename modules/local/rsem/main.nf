@@ -21,6 +21,7 @@ process RSEM {
     --no-bam-output \\
     --alignments \\
     --strandedness $strandedness \\
+    --num-threads $task.cpus \\
     ${pairedness ? "--paired-end" : ""} \\
     $rsem_ext_args \\
     $transcriptome_bam \\
