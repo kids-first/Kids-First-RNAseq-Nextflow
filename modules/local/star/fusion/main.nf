@@ -4,7 +4,7 @@ process STAR_FUSION {
 
     input:
     path(genome_tar)
-    path(Chimeric_junction)
+    path(chimeric_junction)
     val(output_basename)
 
     output:
@@ -17,10 +17,10 @@ process STAR_FUSION {
     tar -I pigz -xvf $genome_tar \\
     && /usr/local/STAR-Fusion/STAR-Fusion \\
     --output_dir STAR-Fusion_outdir \\
-    -J $Chimeric_junction \\
+    -J $chimeric_junction \\
     $star_ext_args \\
     && mv STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv ${output_basename}.STAR-1.10.1.fusion_predictions.abridged.coding_effect.tsv \\
-    && pigz -c $Chimeric_junction > ${Chimeric_junction.getName()}.gz
+    && pigz -c $chimeric_junction > ${chimeric_junction.getName()}.gz
     """
 
 }
