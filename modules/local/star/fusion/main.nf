@@ -18,6 +18,7 @@ process STAR_FUSION {
     && /usr/local/STAR-Fusion/STAR-Fusion \\
     --output_dir STAR-Fusion_outdir \\
     -J $chimeric_junction \\
+    --CPU $task.cpus \\
     $star_ext_args \\
     && mv STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv ${output_basename}.STAR-1.10.1.fusion_predictions.abridged.coding_effect.tsv \\
     && pigz -c $chimeric_junction > ${chimeric_junction.getName()}.gz

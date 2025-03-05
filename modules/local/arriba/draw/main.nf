@@ -6,8 +6,6 @@ process ARRIBA_DRAW {
     tuple path(genome_aligned_bam), path(genome_aligned_bai)
     path(fusions)
     path(gtf_anno)
-    val(outFileNamePrefix)
-    val(assembly)
 
     output:
     path('*pdf'), emit: arriba_pdf

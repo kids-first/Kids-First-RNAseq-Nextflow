@@ -32,6 +32,9 @@ process STAR_ALIGN {
             if (pe_flag){
                 i += 2
             }
+            else{
+                i += 1
+            }
         }
     """
     echo -e "$manifest_str" > star_reads_manifest.txt \\
@@ -41,6 +44,7 @@ process STAR_ALIGN {
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest star_reads_manifest.txt \\
     --outFileNamePrefix "${outFileNamePrefix}." \\
+    --runThreadN $task.cpus \\
     $star_ext_args \\
     && pigz *tab
     """

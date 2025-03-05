@@ -33,7 +33,7 @@ def build_rgs(rg_list, sample){
 }
 
 
-def validate_strandness_len(strand_file, len_out){
+def parse_strandness_len(strand_file, len_out){
     // Read in strand file data and filter on desired fields
     def strand_vals = strand_file.map {
         f -> f.readLines()
@@ -116,7 +116,7 @@ workflow preprocess_reads {
     if (!params.read_length_median || !params.read_length_stddev || !params.strandedness){
         FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
         // validate read len and strandedness are consistent
-        (top_read_len, check_strandedness) = validate_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
+        (top_read_len, check_strandedness) = parse_strandness_len(FASTQ_STRANDEDNESS.out.result, FASTQ_STRANDEDNESS.out.top_read_len)
         // Median and stdev only output for single end data!
         check_strandedness.branch { v->
             stdev: v.startsWith("Stddev")
@@ -220,8 +220,6 @@ workflow align_analyze_rnaseq {
     reference_fasta
     reference_index
     gtf_anno
-    // ARRIBA
-    assembly
     //RSEM
     RSEMgenome
     // kallisto
@@ -256,8 +254,8 @@ workflow align_analyze_rnaseq {
     KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, sample_id, read_length_stddev, read_length_median, is_paired_end)
 
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
-    ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION, assembly)
-    ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno, outFileNamePrefix, assembly)
+    ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION)
+    ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno)
     RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
     RNASEQC(RNAseQC_GTF, sorted_bam_bai, wf_strand_info["RNASEQC"], is_paired_end)
     TAR_GZ(RNASEQC.out.Gene_TPM, RNASEQC.out.Gene_count, RNASEQC.out.Exon_count, outFileNamePrefix)
@@ -326,7 +324,7 @@ workflow {
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
     rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
 
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, reference_index, gtf_anno, assembly, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, reference_index, gtf_anno, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
     rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
 

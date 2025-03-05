@@ -8,7 +8,6 @@ process ARRIBA_FUSION {
     path(gtf_anno)
     val(outFileNamePrefix)
     val(arriba_strand_flag)
-    val(assembly)
 
     output:
     path('*arriba_2.2.1.fusions.tsv'), emit: arriba_fusions
