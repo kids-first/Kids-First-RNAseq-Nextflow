@@ -1,5 +1,5 @@
 process FASTQ_STRANDEDNESS {
-    label 'process_kallisto'
+    label 'C4'
     container "pgc-images.sbgenomics.com/d3b-bixu/stranded:1.1.0"
 
     input:

@@ -23,7 +23,6 @@ workflow align_analyze_rnaseq {
     outFileNamePrefix
     input_fastq_reads
     genome_tar
-    samtools_threads
     reference_fasta
     reference_index
     gtf_anno
@@ -50,7 +49,7 @@ workflow align_analyze_rnaseq {
 
     STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end, outFileNamePrefix)
     STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, outFileNamePrefix)
-    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix, samtools_threads)
+    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix)
     // Create a value conversion dict as many tools use strand as a param but call it different things
 
     wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},

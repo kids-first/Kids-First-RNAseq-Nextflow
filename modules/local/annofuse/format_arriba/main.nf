@@ -1,5 +1,5 @@
 process FORMAT_ARRIBA {
-    label 'process_annofuse'
+    label 'C2'
     container "pgc-images.sbgenomics.com/d3b-bixu/annofuse:0.92.0"
 
     input:

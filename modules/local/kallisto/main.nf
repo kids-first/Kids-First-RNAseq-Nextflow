@@ -1,5 +1,5 @@
 process KALLISTO {
-    label 'process_arriba_draw'
+    label 'C8'
     container 'images.sbgenomics.com/uros_sipetic/kallisto:0.43.1'
 
     input:

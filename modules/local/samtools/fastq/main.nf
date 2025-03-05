@@ -1,11 +1,10 @@
 process SAMTOOLS_FASTQ {
-    label 'process_medium'
+    label 'C16'
     container "staphb/samtools:1.20"
 
     input:
     tuple val(meta), path(input_align)
     path(cram_reference)
-    val(threads)
     val(is_paired_end)
 
     output:
@@ -26,12 +25,12 @@ process SAMTOOLS_FASTQ {
     -m 1G \\
     -n \\
     -O SAM \\
-    -@ $threads \\
+    -@ $task.cpus \\
     $cram_ref_param \\
     $input_align \\
     | samtools fastq \\
     -c 2 \\
-    -@ $threads \\
+    -@ $task.cpus \\
     $output_fastq
     """
 

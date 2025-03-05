@@ -1,5 +1,5 @@
 process STAR_ALIGN {
-    label 'process_star'
+    label 'M16'
     container "pgc-images.sbgenomics.com/d3b-bixu/star:2.7.10a"
 
     input:

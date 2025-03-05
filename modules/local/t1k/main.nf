@@ -1,5 +1,5 @@
 process T1K {
-    label 'process_t1k'
+    label 'M8'
     container 'pgc-images.sbgenomics.com/d3b-bixu/t1k:v1.0.5'
 
     input:

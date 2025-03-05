@@ -39,7 +39,6 @@ workflow preprocess_reads {
     strandedness
     max_reads
     sample_id
-    threads 
     reference
     annotation_gtf
     kallisto_idx
@@ -59,7 +58,7 @@ workflow preprocess_reads {
         }.set { rg_cts }
         single_rg_bams = rg_cts.single.map{ meta, _rg_ct, file -> [meta, file] }
         multi_rg_bams = rg_cts.multi.map{ meta, _rg_ct, file -> [meta, file] }
-        SAMTOOLS_SPLIT(multi_rg_bams, reference, threads)
+        SAMTOOLS_SPLIT(multi_rg_bams, reference)
         // Combine any multi RG outputs that have been split with single RG inputs
         // single_rg_bams looks like [[meta, file], [meta, file]]
         // Each file will have one meta
@@ -70,14 +69,14 @@ workflow preprocess_reads {
         SAMTOOLS_HEAD(align_split_w_meta, line_filter)
         star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
         if (is_paired_end == ""){
-            ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads, threads)
+            ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads)
             is_paired_end = ALIGNMENT_PAIREDNESS.out.map{ it ==~ /ReadType:PAIRED/ }
         }
         else {
             is_paired_end = Channel.value(is_paired_end)
         }
         // use collect to is_paired_end to ensure scatter, so [boolean] is created
-        SAMTOOLS_FASTQ(star_rg_list, reference, threads, is_paired_end.collect())
+        SAMTOOLS_FASTQ(star_rg_list, reference, is_paired_end.collect())
     }
     // reformat fastq inputs to match output from alignment conversion block
     in_fq_formatted = params.input_fastq_reads ? input_fastq_reads.map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty()

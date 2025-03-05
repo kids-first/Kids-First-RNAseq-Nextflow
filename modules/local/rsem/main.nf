@@ -1,5 +1,5 @@
 process RSEM {
-    label 'process_rsem'
+    label 'C16'
     container "images.sbgenomics.com/uros_sipetic/rsem:1.3.1"
 
     input:

@@ -1,5 +1,5 @@
 process RMATS {
-    label 'process_annofuse'
+    label 'C2'
     container "xinglab/rmats:v4.2.0"
 
     input:
@@ -28,7 +28,7 @@ process RMATS {
     --b1 sample_1.txt \\
     --od $output_basename \\
     --tmp temp \\
-    --nthread 4 \\
+    --nthread $task.cpus \\
     -t $read_type \\
     --libType $strandedness \\
     --readLength $read_length \\

@@ -1,5 +1,5 @@
 process RNASEQC {
-    label 'process_arriba_draw'
+    label 'C4'
     container 'gcr.io/broad-cga-aarong-gtex/rnaseqc:2.4.2'
 
     input:

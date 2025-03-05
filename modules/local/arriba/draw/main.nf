@@ -1,5 +1,5 @@
 process ARRIBA_DRAW {
-    label 'process_arriba_draw'
+    label 'M4'
     container "pgc-images.sbgenomics.com/d3b-bixu/arriba:2.2.1"
 
     input:

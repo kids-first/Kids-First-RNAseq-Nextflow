@@ -1,5 +1,5 @@
 process ANNOTATE_ARRIBA {
-    label 'process_annofuse'
+    label 'C4'
     container "pgc-images.sbgenomics.com/d3b-bixu/fusionannotator:0.1.1"
 
     input:

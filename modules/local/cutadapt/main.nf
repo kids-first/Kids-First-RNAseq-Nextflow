@@ -1,5 +1,5 @@
 process CUTADAPT {
-    label 'process_medium'
+    label 'C8'
     container "pgc-images.sbgenomics.com/d3b-bixu/cutadapt:3.4"
 
     input:
@@ -13,7 +13,7 @@ process CUTADAPT {
     script:
     def args = task.ext.args ?: ''
     """
-    cutadapt -j 8 \\
+    cutadapt -j $task.cpus \\
     $args \\
     $reads \\
     > cutadapt_stats.txt

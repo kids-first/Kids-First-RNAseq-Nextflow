@@ -1,5 +1,5 @@
 process ARRIBA_FUSION {
-    label 'process_arriba_fusion'
+    label 'R8'
     container "pgc-images.sbgenomics.com/d3b-bixu/arriba:2.2.1"
 
     input:

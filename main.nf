@@ -16,7 +16,6 @@ workflow {
     max_reads = Channel.value(params.max_reads)
     line_filter = Channel.value(params.line_filter)
     sample_id = Channel.value(params.sample_id)
-    threads = Channel.value(params.threads)
     reference = Channel.fromPath(params.reference).first()
     reference_index = Channel.fromPath(params.reference_index).first()
     output_basename = Channel.value(params.output_basename)
@@ -29,9 +28,7 @@ workflow {
     FusionGenome = Channel.fromPath(params.FusionGenome)
     // arriba
     fusion_annotator_tar = Channel.fromPath(params.fusion_annotator_tar)
-    assembly = Channel.value(params.assembly)
 
-    samtools_threads = Channel.value(params.samtools_threads)
     // RSEM
     RSEM_genome = Channel.fromPath(params.RSEM_genome)
     // RNASeQC
@@ -40,13 +37,13 @@ workflow {
     hla_rna_ref_seqs = Channel.fromPath(params.hla_rna_ref_seqs)
     hla_rna_gene_coords = Channel.fromPath(params.hla_rna_gene_coords)
 
-    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, threads, reference, gtf_anno, kallisto_idx)
+    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, is_paired_end, read_length_median, read_length_stddev, strandedness, max_reads, sample_id, reference, gtf_anno, kallisto_idx)
 
     added_metadata = preprocess_reads.out.added_metadata
     (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
     rmats_strand = strandedness.map{it.startsWith("rf") ? "fr-firststrand" : (it.startsWith("fr") ? "fr-secondstrand" : "fr-unstranded")}
 
-    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, samtools_threads, reference, reference_index, gtf_anno, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
+    align_analyze_rnaseq(genomeDir, readFilesCommand, output_basename, preprocess_reads.out.fastq_to_align, FusionGenome, reference, reference_index, gtf_anno, RSEM_genome, kallisto_idx, sample_id, RNAseQC_GTF, hla_rna_ref_seqs, hla_rna_gene_coords, added_metadata)
     annofuse_subworkflow(align_analyze_rnaseq.out.arriba_fusion_results, sample_id, fusion_annotator_tar, align_analyze_rnaseq.out.RSEM_gene, align_analyze_rnaseq.out.STARFusion_results, output_basename)
     rmats_subworkflow(gtf_anno, align_analyze_rnaseq.out.genomic_bam_out, read_length_median, is_paired_end ? "paired" : "single", rmats_strand, output_basename)
 

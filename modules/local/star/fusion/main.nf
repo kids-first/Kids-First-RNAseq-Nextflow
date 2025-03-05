@@ -1,5 +1,5 @@
 process STAR_FUSION {
-    label 'process_star'
+    label 'M16'
     container "pgc-images.sbgenomics.com/d3b-bixu/star:fusion-1.10.1"
 
     input:

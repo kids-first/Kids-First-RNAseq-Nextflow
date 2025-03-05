@@ -1,5 +1,5 @@
 process TAR_GZ {
-    label 'process_annofuse'
+    label 'C2'
     container 'ubuntu:22.04'
 
     input:
