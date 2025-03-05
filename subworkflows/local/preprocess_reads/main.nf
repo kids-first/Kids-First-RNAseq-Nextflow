@@ -30,22 +30,24 @@ def parse_strandness_len(strand_file, len_out){
 
 workflow preprocess_reads {
     take:
-    input_alignment_reads
-    input_fastq_reads
-    line_filter
-    is_paired_end
-    read_length_median
-    read_length_stddev
-    strandedness
-    max_reads
-    sample_id
-    reference
-    annotation_gtf
-    kallisto_idx
+    input_alignment_reads // channel: path, Optional unless no input_fastq_reads
+    input_fastq_reads // channel: [val(rgs), path(fastq | [fastq])], Optional unless no input_alignment_reads
+    line_filter // channel: val(string)
+    is_paired_end // boolean: optional
+    read_length_median // channel: value(int)
+    read_length_stddev // channel: value(int)
+    strandedness // channel: val(string)
+    max_reads // channel: val(int)
+    sample_id // channel: val(string)
+    reference // channel: path(fasta)
+    annotation_gtf // channel: path(gtf)
+    kallisto_idx // channel: path(idx)
 
 
     main:
-
+    if (is_paired_end instanceof Boolean){
+        is_paired_end = Channel.value(is_paired_end)
+    }
     // If reads are from BAM/CRAM, convert to fastq
     if (params.input_alignment_reads){
         // initialize with metadata to track input bams
@@ -72,18 +74,12 @@ workflow preprocess_reads {
             ALIGNMENT_PAIREDNESS(input_alignment_reads, reference, max_reads)
             is_paired_end = ALIGNMENT_PAIREDNESS.out.map{ it ==~ /ReadType:PAIRED/ }
         }
-        else {
-            is_paired_end = Channel.value(is_paired_end)
-        }
         // use collect to is_paired_end to ensure scatter, so [boolean] is created
         SAMTOOLS_FASTQ(star_rg_list, reference, is_paired_end.collect())
     }
-    // reformat fastq inputs to match output from alignment conversion block
+    // Combine fastq inputs with output from alignment conversion block if applicable
     reads = params.input_alignment_reads ? SAMTOOLS_FASTQ.out.concat(input_fastq_reads): input_fastq_reads
     // Set PE channel value flag if not set already
-    if (is_paired_end instanceof Boolean){
-        is_paired_end = Channel.value(is_paired_end)
-    }
     if (is_paired_end == ""){
         is_paired_end = reads.map{ _reads, f ->
             if (f instanceof List){
