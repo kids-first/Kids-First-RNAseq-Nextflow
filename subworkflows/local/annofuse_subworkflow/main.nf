@@ -6,12 +6,12 @@ include { ANNOFUSE } from '../../../modules/local/annofuse/tool/main'
 
 workflow annofuse_subworkflow {
     take:
-    arriba_output_file
-    sample_name
-    fusion_annotator_tar
-    rsem_expr_file
-    star_fusion_output_file
-    output_basename
+    arriba_output_file // channel: path(TSC)
+    sample_name // channel: val(str)
+    fusion_annotator_tar // channel: path(TAR.GZ)
+    rsem_expr_file // channel: path(GZ)
+    star_fusion_output_file // channel: path(TSV)
+    output_basename // channel: val(str)
 
     main:
     FORMAT_ARRIBA(arriba_output_file, output_basename)
@@ -19,5 +19,5 @@ workflow annofuse_subworkflow {
     ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_name, output_basename)
 
     emit:
-    annofuse_filtered_fusions_tsv = ANNOFUSE.out.filtered_fusions_tsv
+    annofuse_filtered_fusions_tsv = ANNOFUSE.out.filtered_fusions_tsv // channel: path(TSV)
 }

@@ -5,12 +5,12 @@ include { AWK_JC_FILTER } from '../../../modules/local/rmats/filter/main'
 
 workflow rmats_subworkflow {
     take:
-    gtf_annotation
-    sample_1_bams
-    read_length
-    read_type
-    strandedness
-    output_basename
+    gtf_annotation // channel: path(GTF)
+    sample_1_bams // channel: path(BAM)
+    read_length // channel: val(int)
+    read_type // channel: val(str)
+    strandedness // channel: val(str)
+    output_basename // channel: val(str)
 
     main:
     RMATS(gtf_annotation, sample_1_bams, read_length, read_type, strandedness, output_basename)
@@ -23,6 +23,6 @@ workflow rmats_subworkflow {
     AWK_JC_FILTER(jc_files)
     
     emit:
-    rmats_filtered_jc = AWK_JC_FILTER.out.output
+    rmats_filtered_jc = AWK_JC_FILTER.out.output // channel: [path(TXT)]
 
 }

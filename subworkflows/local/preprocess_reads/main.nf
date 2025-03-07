@@ -31,7 +31,7 @@ def parse_strandness_len(strand_file, len_out){
 workflow preprocess_reads {
     take:
     input_alignment_reads // channel: path, Optional unless no input_fastq_reads
-    input_fastq_reads // channel: [val(rgs), path(fastq | [fastq])], Optional unless no input_alignment_reads
+    input_fastq_reads // channel: [val(rgs), path(FASTQ | [FASTQ])], Optional unless no input_alignment_reads
     line_filter // channel: val(string)
     is_paired_end // boolean: optional
     read_length_median // channel: value(int)
@@ -39,9 +39,9 @@ workflow preprocess_reads {
     strandedness // channel: val(string)
     max_reads // channel: val(int)
     sample_id // channel: val(string)
-    reference // channel: path(fasta)
-    annotation_gtf // channel: path(gtf)
-    kallisto_idx // channel: path(idx)
+    reference // channel: path(FASTA)
+    annotation_gtf // channel: path(GTF)
+    kallisto_idx // channel: path(IDX)
 
 
     main:
@@ -139,7 +139,7 @@ workflow preprocess_reads {
         reads = CUTADAPT.out.fastq_out
     }
     emit:
-    fastq_to_align = reads
-    cutadapt_stats = params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff ? CUTADAPT.out.cutadapt_metrics : Channel.value()
-    added_metadata = added_metadata
+    fastq_to_align = reads // channel: [val(rgs), path(FASTQ | [FASTQ])]
+    cutadapt_stats = params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff ? CUTADAPT.out.cutadapt_metrics : Channel.value() // channel: path(TXT) Optional
+    added_metadata = added_metadata // channel: [val(bool), val(int), val(str), val(int | None )
 }

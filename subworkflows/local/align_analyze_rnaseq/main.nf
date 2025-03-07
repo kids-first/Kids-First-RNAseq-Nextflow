@@ -17,27 +17,27 @@ include { TAR_GZ } from '../../../modules/local/ubuntu/tar_gz/main'
 workflow align_analyze_rnaseq {
     take:
     //STAR
-    genomeDir
-    readFilesCommand
+    genomeDir // channel: path(TAR.GZ)
+    readFilesCommand // channel: val(str)
     // Many
-    outFileNamePrefix
-    input_fastq_reads
-    genome_tar
-    reference_fasta
-    reference_index
-    gtf_anno
+    outFileNamePrefix // channel: val(str)
+    input_fastq_reads // channel: [val(rgs), path(FASTQ | [FASTQ])]
+    genome_tar // channel: path(TAR.GZ)
+    reference_fasta // channel: path(FASTA)
+    reference_index // channel: path(FAI)
+    gtf_anno // channel: path(GTF)
     //RSEM
-    RSEMgenome
+    RSEMgenome // channel: path(TAR.GZ)
     // kallisto
-    kallisto_idx
-    sample_id
+    kallisto_idx // channel: path(IDX)
+    sample_id // channel: va(str)
     // RNAseqc
-    RNAseQC_GTF
+    RNAseQC_GTF // channel: path(GTF)
     // T1K
-    hla_rna_ref_seqs
-    hla_rna_gene_coords
+    hla_rna_ref_seqs // channel: path(FASTA)
+    hla_rna_gene_coords // channel: path(FASTA)
     // From preprocess
-    added_metadata
+    added_metadata // channel: [val(bool), val(int), val(str), val(int | None )
 
     main:
     rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
@@ -72,19 +72,19 @@ workflow align_analyze_rnaseq {
 
 
     emit:
-    genomic_bam_out = STAR_ALIGN.out.genomic_bam_out
-    STAR_sorted_genomic_cram = SAMTOOLS_VIEW.out.cram
-    STAR_chimeric_junctions = STAR_FUSION.out.chimeric_junction_compressed
-    STAR_gene_count = STAR_ALIGN.out.gene_counts
-    STAR_junctions_out = STAR_ALIGN.out.junctions_out
-    STAR_final_log = STAR_ALIGN.out.log_final_out
-    STARFusion_results = STAR_FUSION.out.abridged_coding
-    arriba_fusion_results = ARRIBA_FUSION.out.arriba_fusions
-    arriba_fusion_viz = ARRIBA_DRAW.out.arriba_pdf
-    RSEM_isoform = RSEM.out.isoform_out
-    RSEM_gene = RSEM.out.gene_out
-    RNASeQC_Metrics = RNASEQC.out.Metrics
-    RNASeQC_counts = TAR_GZ.out.RNASeQC_counts
-    kallisto_Abundance = KALLISTO.out.abundance_out
-    t1k_genotype_tsv = T1K.out.genotype_tsv
+    genomic_bam_out = STAR_ALIGN.out.genomic_bam_out // channel: path(BAM)
+    STAR_sorted_genomic_cram = SAMTOOLS_VIEW.out.cram // channel: tuple path(CRAM), path(CRAI)
+    STAR_chimeric_junctions = STAR_FUSION.out.chimeric_junction_compressed // channel: path(TSV.GZ)
+    STAR_gene_count = STAR_ALIGN.out.gene_counts // channel: path(GZ)
+    STAR_junctions_out = STAR_ALIGN.out.junctions_out // channel: path(GZ)
+    STAR_final_log = STAR_ALIGN.out.log_final_out //channel: path(txt)
+    STARFusion_results = STAR_FUSION.out.abridged_coding // channel: path(TSV)
+    arriba_fusion_results = ARRIBA_FUSION.out.arriba_fusions // channel: path(TSV)
+    arriba_fusion_viz = ARRIBA_DRAW.out.arriba_pdf // channel: path(PDF)
+    RSEM_isoform = RSEM.out.isoform_out // channel: path(GZ)
+    RSEM_gene = RSEM.out.gene_out // channel: path(GZ)
+    RNASeQC_Metrics = RNASEQC.out.Metrics // channel: path(TXT)
+    RNASeQC_counts = TAR_GZ.out.RNASeQC_counts // channel: path(TAR.GZ)
+    kallisto_Abundance = KALLISTO.out.abundance_out // channel: path(TSV.GZ)
+    t1k_genotype_tsv = T1K.out.genotype_tsv // channel: path(TSV)
 }
