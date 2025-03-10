@@ -1,5 +1,5 @@
 process SAMTOOLS_HEAD_RG_CT {
-    label 'process_low'
+    label 'C2'
     container "staphb/samtools:1.20"
 
     input:

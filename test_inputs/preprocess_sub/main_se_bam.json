@@ -1,0 +1,9 @@
+{
+    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+    "input_alignment_reads": ["SE_BAM/se_subset_rna.cram"],
+    "sample_id": "SRR7268790_TEST",
+    "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
+    "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
+    "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
+    "threads": 8
+}
