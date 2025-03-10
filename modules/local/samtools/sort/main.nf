@@ -1,5 +1,5 @@
 process SAMTOOLS_SORT {
-    label 'C16'
+    label 'C8'
     container "pgc-images.sbgenomics.com/d3b-bixu/samtools:1.9"
 
     input:
