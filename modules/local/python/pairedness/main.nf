@@ -3,7 +3,7 @@ process ALIGNMENT_PAIREDNESS {
     container "quay.io/biocontainers/pysam:0.22.0--py310h41dec4a_0"
 
     input:
-    path input_reads
+    tuple val(meta), path(input_reads)
     path input_reference
     val max_reads
 
@@ -20,8 +20,13 @@ process ALIGNMENT_PAIREDNESS {
 
     if [ \$RESULT == 'ReadType:MIXED' ]
     then
-    echo "Result was mixed, could not determine pairedness";
-    exit 1;
+        echo "Result was mixed, could not determine pairedness"
+        exit 1
+    elif [ \$RESULT == 'ReadType:PAIRED' ]
+    then
+        RESULT=true
+    else
+        RESULT=false
     fi
 
     """
