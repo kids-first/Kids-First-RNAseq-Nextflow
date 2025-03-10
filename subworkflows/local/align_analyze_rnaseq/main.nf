@@ -37,15 +37,14 @@ workflow align_analyze_rnaseq {
     hla_rna_ref_seqs // channel: path(FASTA)
     hla_rna_gene_coords // channel: path(FASTA)
     // From preprocess
-    added_metadata // channel: [val(bool), val(int), val(str), val(int | None )
+    is_paired_end
+    strandedness
+    read_length_median
+    read_length_stddev
 
     main:
     rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
     fqs = input_fastq_reads.map { _rg, fq -> fq}.collect()
-
-     // Assign added metadata to named variables for clarity
-    (is_paired_end, read_length_median, strandedness) = [added_metadata.first(), added_metadata.take(2).last(), added_metadata.take(3).last()]
-    read_length_stddev = is_paired_end ? added_metadata.last() : ""
 
     STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end, outFileNamePrefix)
     STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, outFileNamePrefix)

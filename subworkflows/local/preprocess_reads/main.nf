@@ -28,7 +28,7 @@ def parse_strandness_len(strand_file, len_out){
 }
 
 
-def check_pe_values(flag){
+def qc_pe_values(flag){
     def e_msg = ""
     flag.unique().count().map { n ->
         if (n > 1){
@@ -53,6 +53,21 @@ def check_pe_values(flag){
 }
 
 
+def qc_strand_values(strand){
+    strand.unique().count().map { n ->
+        if (n > 1){
+            if (params.strandedness != ""){
+                return params.strandedness
+            }
+            else{
+                error("Inconsistent strandedness. Revisit inputs and/or set params.strandedness to override")
+            }
+        }
+    }
+    return strand.unique()
+}
+
+
 workflow preprocess_reads {
     take:
     input_alignment_reads // channel: path, Optional unless no input_fastq_reads
@@ -60,7 +75,6 @@ workflow preprocess_reads {
     line_filter // channel: val(string)
     read_length_median // channel: value(int)
     read_length_stddev // channel: value(int)
-    strandedness // channel: val(string)
     max_reads // channel: val(int)
     sample_id // channel: val(string)
     reference // channel: path(FASTA)
@@ -92,7 +106,6 @@ workflow preprocess_reads {
     star_rg_list = build_rgs(SAMTOOLS_HEAD.out, sample_id)
     ALIGNMENT_PAIREDNESS(align_split_w_meta, reference, max_reads)
     is_paired_end = ALIGNMENT_PAIREDNESS.out.result
-    is_paired_end.view()
     // use collect to is_paired_end to ensure scatter, so [boolean] is created
     SAMTOOLS_FASTQ(star_rg_list, reference, is_paired_end.collect())
     // Combine fastq inputs with output from alignment conversion block if applicable
@@ -109,8 +122,7 @@ workflow preprocess_reads {
     }
     )
     // Final check of is_paired_end - all should match, if not, need params override
-    is_paired_end = check_pe_values(is_paired_end)
-    is_paired_end.view()
+    is_paired_end = qc_pe_values(is_paired_end)
     // only run if a param is missing, otherwise skip
     if (!params.read_length_median || !params.read_length_stddev || !params.strandedness){
         FASTQ_STRANDEDNESS(reads, annotation_gtf, kallisto_idx, max_reads)
@@ -121,7 +133,8 @@ workflow preprocess_reads {
             stdev: v.startsWith("Stddev")
                 return v.split(":")[1].toFloat().toInteger()
             strand: v.startsWith("Data is")
-                return v.split(" ")[-1]
+            def test = v.split(" ")[-1].toString().substring(0, 2)
+                return test == "unstranded" ? "default" : (test == "RF" ? "rf-stranded" : "fr-stranded")
             other: true
         }.set { strand_info }
         if (!params.read_length_median){ 
@@ -134,25 +147,11 @@ workflow preprocess_reads {
         }
         read_length_stddev = !params.read_length_stddev && is_paired_end.map {it} ? strand_info.stdev.unique() : read_length_stddev
     }
-    strand_info.strand.unique().count().map { n ->
-        if (n > 1){
-            error("Inconsistent strandedness")
-        }
-    }
+
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
-    strandedness = params.strandedness ? strandedness : strand_info.strand.unique().map { value -> 
-        if (value.toString() == "unstranded"){
-            return "default"
-        }
-        if (value.toString().substring(0, 2) == "RF"){
-            return "rf-stranded"
-        }
-        if (value.toString().substring(0, 2) == "FR"){
-            return "fr-stranded"
-        }
-    }
+    strandedness = params.strandedness ?: strand_info.strand
+    strandedness = qc_pe_values(strandedness)
     // collate user input and calculated values into one list
-    added_metadata = is_paired_end.first().concat(read_length_median.first(), strandedness.first(), read_length_stddev.first())
 
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
         CUTADAPT(reads)
@@ -161,5 +160,9 @@ workflow preprocess_reads {
     emit:
     fastq_to_align = reads // channel: [val(rgs), path(FASTQ | [FASTQ])]
     cutadapt_stats = params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff ? CUTADAPT.out.cutadapt_metrics : Channel.value() // channel: path(TXT) Optional
-    added_metadata = added_metadata // channel: [val(bool), val(int), val(str), val(int | None )
+    is_paired_end = is_paired_end
+    read_length_median = read_length_median
+    read_length_stddev = read_length_stddev
+    strandedness = strandedness
+
 }
