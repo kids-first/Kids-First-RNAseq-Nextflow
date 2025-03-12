@@ -1,0 +1,707 @@
+app_content:
+    entrypoint: main.nf
+class: nextflow
+executor_version: 24.10.1
+cwlVersion: None
+doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of converting\
+    \ our CWL production workflow to Nextflow.\nOnce development has complete, it\
+    \ will become a prod product.\n\n![image](docs/kids_first_logo.svg#sbg_width=660px)\n\
+    ![image](https://img.shields.io/github/license/kids-first/Kids-First-RNAseq-Nextflow.svg?style=for-the-badge)\n\
+    \n## Current State\nThe workflow is in alpha production shape.\nCurrently, you\
+    \ __cannot__ mix single and and paried end data with this workflow.\nIn the `test_inputs`\
+    \ dir, there are examples of various input situations that have been tested.\n\
+    \n## Preprocess Reads Subworkflow:\nThe workflow takes in a mix of alignment files\
+    \ (BAM/CRAM) and fastq (single or paired end) and does the following:\n### Alignment\
+    \ input\n1. Split by read group\n1. Create STAR read group strings\n1. Convert\
+    \ to FASTQ\n1. Run cutadapt if a cutadapt-related param is given\n1. Return an\
+    \ object with STAR RG strings and related fastqs for downstream processing\n\n\
+    ### FASTQ input\n1. Reformat to match object created by alignment input\n1. Run\
+    \ cutadapt if a cutadapt-related param is given\n### Result\nReturn an object\
+    \ with STAR RG strings and related fastqs coming from the alignment input and/or\
+    \ fastq input for downstream processing and the added_metadata with the following:\n\
+    \   - Paired end flag\n   - Read length median\n   - Read length std dev\n   -\
+    \ Strandedness\n\n## Align Analyze RNAseq\n - STAR Align\n - STAR Fusion\n - Arriba\
+    \ Fusion\n - T1K\n - RNASeQC\n - Kallisto\n\n## annoFuse Subworkflow\n - Format\
+    \ Arriba\n - Annotate Arriba\n - Collate, filter, and annotate Arriba + Fusion\
+    \ results (annoFuse)\n\n## T1K Subworkflow\n - Run T1K\n - Filter results\n# DAGS\n\
+    \n## Main WF\n```mermaid\nflowchart TB\n    subgraph \" \"\n    subgraph params\n\
+    \    v6[\"read_length_median\"]\n    v16[\"sample_id\"]\n    v48[\"hla_rna_gene_coords\"\
+    ]\n    v8[\"read_length_stddev\"]\n    v20[\"reference\"]\n    v2[\"input_fastq_reads\"\
+    ]\n    v32[\"readFilesCommand\"]\n    v34[\"FusionGenome\"]\n    v38[\"assembly\"\
+    ]\n    v24[\"output_basename\"]\n    v22[\"reference_index\"]\n    v18[\"threads\"\
+    ]\n    v4[\"is_paired_end\"]\n    v44[\"RNAseQC_GTF\"]\n    v12[\"max_reads\"\
+    ]\n    v14[\"line_filter\"]\n    v10[\"strandedness\"]\n    v30[\"genomeDir\"\
+    ]\n    v46[\"hla_rna_ref_seqs\"]\n    v26[\"gtf_anno\"]\n    v40[\"samtools_threads\"\
+    ]\n    v36[\"fusion_annotator_tar\"]\n    v28[\"kallisto_idx\"]\n    v42[\"RSEM_genome\"\
+    ]\n    v0[\"input_alignment_reads\"]\n    end\n    v50([preprocess_reads])\n \
+    \   v56([align_analyze_rnaseq])\n    v57([annofuse_subworkflow])\n    v58([rmats_subworkflow])\n\
+    \    v0 --> v50\n    v2 --> v50\n    v4 --> v50\n    v6 --> v50\n    v8 --> v50\n\
+    \    v10 --> v50\n    v12 --> v50\n    v14 --> v50\n    v16 --> v50\n    v18 -->\
+    \ v50\n    v20 --> v50\n    v26 --> v50\n    v28 --> v50\n    v32 --> v56\n  \
+    \  v34 --> v56\n    v40 --> v56\n    v42 --> v56\n    v44 --> v56\n    v46 -->\
+    \ v56\n    v16 --> v56\n    v48 --> v56\n    v50 --> v56\n    v20 --> v56\n  \
+    \  v22 --> v56\n    v24 --> v56\n    v26 --> v56\n    v28 --> v56\n    v30 -->\
+    \ v56\n    v16 --> v57\n    v36 --> v57\n    v56 --> v57\n    v24 --> v57\n  \
+    \  v50 --> v58\n    v56 --> v58\n    v24 --> v58\n    v26 --> v58\n    end\n```\n\
+    \n## [Preprocess Reads](docs/dags/PREPROCESS_READS_SUBWF.md)\n\n## [Align Analyze\
+    \ RNAseq](docs/dags/ALIGN_ANALYZE_RNASEQ_SUBWF.md)\n\n## [annoFuse Subworkflow](docs/dags/ANNOFUSE_SUBWORKFLOW.md)\n\
+    \n## [rMATS Subworkflow](docs/dags/RMATS_SUBWORKFLOW.md)\n"
+hints:
+-   class: sbg:NextflowExecutionMode
+    value: multi-instance
+inputs:
+-   id: sample_id
+    inputBinding:
+        prefix: --sample_id
+    type:
+    - string
+    doc: Sample ID of the input reads
+-   id: output_basename
+    inputBinding:
+        prefix: --output_basename
+    type:
+    - string
+    doc: String to use as basename for outputs
+-   id: input_reads_list
+    inputBinding:
+        prefix: --input_reads_list
+    type:
+    - 'null'
+    - type: array
+      items: File
+    doc: List of FASTQ files to process. If paired end, it's R1s only
+-   id: input_mates_list
+    inputBinding:
+        prefix: --input_mates_list
+    type:
+    - 'null'
+    - type: array
+      items: File
+    doc: List of R2 FASTQ files to process, if paired end
+-   id: input_rgs_list
+    inputBinding:
+        prefix: --input_rgs_list
+    type:
+    - 'null'
+    - type: array
+      items: string
+    doc: List of RG strings to use
+-   id: is_paired_end
+    inputBinding:
+        prefix: --is_paired_end
+    type:
+    - 'null'
+    - boolean
+    doc: Flag if input data is paired end. Workflow will auto-detect if left blank, if set, will override
+-   id: read_length_median
+    inputBinding:
+        prefix: --read_length_median
+    type:
+    - 'null'
+    - int
+    doc: The median read length for the reads provided
+-   id: read_length_stddev
+    inputBinding:
+        prefix: --read_length_stddev
+    type:
+    - 'null'
+    - int
+    doc: Standard Deviation of the median read length
+-   id: strandedness
+    inputBinding:
+        prefix: --strandedness
+    type:
+    - 'null'
+    - name: strandedness
+      type: enum
+      symbols:
+        - default
+        - rf-stranded
+        - fr-stranded
+-   id: input_alignment_reads
+    inputBinding:
+        prefix: --input_alignment_reads
+    type:
+    - 'null'
+    - type: array
+      items: File
+    doc: List of input SAM/BAM/CRAM files to process
+    secondaryFiles:
+    - pattern: ^.bai
+      required: false
+    - pattern: .bai
+      required: false
+    - pattern: ^.crai
+      required: false
+    - pattern: .crai
+      required: false
+-   id: max_reads
+    inputBinding:
+        prefix: --max_reads
+    sbg:toolDefaultValue: 200000
+    type:
+    - 'null'
+    - int
+-   id: line_filter
+    inputBinding:
+        prefix: --line_filter
+    sbg:toolDefaultValue: ^@RG
+    type:
+    - 'null'
+    - string
+-   id: cutadapt_r1_adapter
+    inputBinding:
+        prefix: --cutadapt_r1_adapter
+    type:
+    - 'null'
+    - string
+-   id: cutadapt_r2_adapter
+    inputBinding:
+        prefix: --cutadapt_r2_adapter
+    type:
+    - 'null'
+    - string
+-   id: cutadapt_min_len
+    inputBinding:
+        prefix: --cutadapt_min_len
+    type:
+    - 'null'
+    - string
+-   id: cutadapt_quality_base
+    inputBinding:
+        prefix: --cutadapt_quality_base
+    type:
+    - 'null'
+    - int
+-   id: cutadapt_quality_cutoff
+    inputBinding:
+        prefix: --cutadapt_quality_cutoff
+    type:
+    - 'null'
+    - int
+-   id: reference
+    inputBinding:
+        prefix: --reference
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 5f500135e4b0370371c051b4, name: GRCh38.primary_assembly.genome.fa }
+-   id: reference_index
+    inputBinding:
+        prefix: --reference_index
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62866da14d85bc2e02ba52db, name: GRCh38.primary_assembly.genome.fa.fai }
+-   id: gtf_anno
+    inputBinding:
+        prefix: --gtf_anno
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62853e7ad63f7c6d8d7ae5a4, name: gencode.v39.primary_assembly.annotation.gtf }
+-   id: kallisto_idx
+    inputBinding:
+        prefix: --kallisto_idx
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62853e7ad63f7c6d8d7ae5a6, name: RSEM_GENCODE39.transcripts.kallisto.idx }
+-   id: ram
+    inputBinding:
+        prefix: --ram
+    type:
+    - 'null'
+    - int
+-   id: genomeDir
+    inputBinding:
+        prefix: --genomeDir
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: {class: File, path: 62853e7ad63f7c6d8d7ae5a7, name: STAR_2.7.10a_GENCODE39.tar.gz}
+    doc: STAR genome reference tar ball
+-   id: readFilesCommand
+    inputBinding:
+        prefix: --readFilesCommand
+    sbg:toolDefaultValue: zcat
+    type:
+    - 'null'
+    - string
+-   id: alignInsertionFlush
+    inputBinding:
+        prefix: --alignInsertionFlush
+    sbg:toolDefaultValue: None
+    type:
+    - 'null'
+    - string
+-   id: alignIntronMax
+    inputBinding:
+        prefix: --alignIntronMax
+    sbg:toolDefaultValue: 1000000
+    type:
+    - 'null'
+    - int
+-   id: alignMatesGapMax
+    inputBinding:
+        prefix: --alignMatesGapMax
+    sbg:toolDefaultValue: 1000000
+    type:
+    - 'null'
+    - int
+-   id: alignSJDBoverhangMin
+    inputBinding:
+        prefix: --alignSJDBoverhangMin
+    sbg:toolDefaultValue: 1
+    type:
+    - 'null'
+    - int
+-   id: alignSJoverhangMin
+    inputBinding:
+        prefix: --alignSJoverhangMin
+    sbg:toolDefaultValue: 8
+    type:
+    - 'null'
+    - int
+-   id: alignSJstitchMismatchNmax
+    inputBinding:
+        prefix: --alignSJstitchMismatchNmax
+    sbg:toolDefaultValue: 5 -1 5 5
+    type:
+    - 'null'
+    - string
+-   id: alignSoftClipAtReferenceEnds
+    inputBinding:
+        prefix: --alignSoftClipAtReferenceEnds
+    sbg:toolDefaultValue: 'Yes'
+    type:
+    - 'null'
+    - string
+-   id: alignSplicedMateMapLmin
+    inputBinding:
+        prefix: --alignSplicedMateMapLmin
+    sbg:toolDefaultValue: 0
+    type:
+    - 'null'
+    - int
+-   id: alignSplicedMateMapLminOverLmate
+    inputBinding:
+        prefix: --alignSplicedMateMapLminOverLmate
+    sbg:toolDefaultValue: 0.5
+    type:
+    - 'null'
+    - float
+-   id: chimJunctionOverhangMin
+    inputBinding:
+        prefix: --chimJunctionOverhangMin
+    sbg:toolDefaultValue: 10
+    type:
+    - 'null'
+    - int
+-   id: chimMainSegmentMultNmax
+    inputBinding:
+        prefix: --chimMainSegmentMultNmax
+    sbg:toolDefaultValue: 1
+    type:
+    - 'null'
+    - int
+-   id: chimMultimapNmax
+    inputBinding:
+        prefix: --chimMultimapNmax
+    sbg:toolDefaultValue: 50
+    type:
+    - 'null'
+    - int
+-   id: chimMultimapScoreRange
+    inputBinding:
+        prefix: --chimMultimapScoreRange
+    sbg:toolDefaultValue: 1
+    type:
+    - 'null'
+    - int
+-   id: chimNonchimScoreDropMin
+    inputBinding:
+        prefix: --chimNonchimScoreDropMin
+    sbg:toolDefaultValue: 20
+    type:
+    - 'null'
+    - int
+-   id: chimOutJunctionFormat
+    inputBinding:
+        prefix: --chimOutJunctionFormat
+    sbg:toolDefaultValue: 1
+    type:
+    - 'null'
+    - int
+-   id: chimOutType
+    inputBinding:
+        prefix: --chimOutType
+    sbg:toolDefaultValue: Junctions WithinBAM SoftClip
+    type:
+    - 'null'
+    - string
+-   id: chimScoreDropMax
+    inputBinding:
+        prefix: --chimScoreDropMax
+    sbg:toolDefaultValue: 30
+    type:
+    - 'null'
+    - int
+-   id: chimScoreJunctionNonGTAG
+    inputBinding:
+        prefix: --chimScoreJunctionNonGTAG
+    sbg:toolDefaultValue: -1
+    type:
+    - 'null'
+    - int
+-   id: chimScoreSeparation
+    inputBinding:
+        prefix: --chimScoreSeparation
+    sbg:toolDefaultValue: 1
+    type:
+    - 'null'
+    - int
+-   id: chimSegmentMin
+    inputBinding:
+        prefix: --chimSegmentMin
+    sbg:toolDefaultValue: 10
+    type:
+    - 'null'
+    - int
+-   id: chimSegmentReadGapMax
+    inputBinding:
+        prefix: --chimSegmentReadGapMax
+    sbg:toolDefaultValue: 3
+    type:
+    - 'null'
+    - int
+-   id: genomeLoad
+    inputBinding:
+        prefix: --genomeLoad
+    sbg:toolDefaultValue: NoSharedMemory
+    type:
+    - 'null'
+    - string
+-   id: limitSjdbInsertNsj
+    inputBinding:
+        prefix: --limitSjdbInsertNsj
+    sbg:toolDefaultValue: 1200000
+    type:
+    - 'null'
+    - int
+-   id: outFilterIntronMotifs
+    inputBinding:
+        prefix: --outFilterIntronMotifs
+    sbg:toolDefaultValue: None
+    type:
+    - 'null'
+    - string
+-   id: outFilterMatchNminOverLread
+    inputBinding:
+        prefix: --outFilterMatchNminOverLread
+    sbg:toolDefaultValue: 0.33
+    type:
+    - 'null'
+    - float
+-   id: outFilterMismatchNmax
+    inputBinding:
+        prefix: --outFilterMismatchNmax
+    sbg:toolDefaultValue: 999
+    type:
+    - 'null'
+    - int
+-   id: outFilterMismatchNoverLmax
+    inputBinding:
+        prefix: --outFilterMismatchNoverLmax
+    sbg:toolDefaultValue: 0.1
+    type:
+    - 'null'
+    - float
+-   id: outFilterMultimapNmax
+    inputBinding:
+        prefix: --outFilterMultimapNmax
+    sbg:toolDefaultValue: 50
+    type:
+    - 'null'
+    - int
+-   id: outFilterScoreMinOverLread
+    inputBinding:
+        prefix: --outFilterScoreMinOverLread
+    sbg:toolDefaultValue: 0.33
+    type:
+    - 'null'
+    - float
+-   id: outFilterType
+    inputBinding:
+        prefix: --outFilterType
+    sbg:toolDefaultValue: BySJout
+    type:
+    - 'null'
+    - string
+-   id: outReadsUnmapped
+    inputBinding:
+        prefix: --outReadsUnmapped
+    sbg:toolDefaultValue: None
+    type:
+    - 'null'
+    - string
+-   id: outSAMattributes
+    inputBinding:
+        prefix: --outSAMattributes
+    sbg:toolDefaultValue: NH HI AS nM NM ch
+    type:
+    - 'null'
+    - string
+-   id: outSAMstrandField
+    inputBinding:
+        prefix: --outSAMstrandField
+    sbg:toolDefaultValue: intronMotif
+    type:
+    - 'null'
+    - string
+-   id: outSAMtype
+    inputBinding:
+        prefix: --outSAMtype
+    sbg:toolDefaultValue: BAM Unsorted
+    type:
+    - 'null'
+    - string
+-   id: outSAMunmapped
+    inputBinding:
+        prefix: --outSAMunmapped
+    sbg:toolDefaultValue: Within
+    type:
+    - 'null'
+    - string
+-   id: peOverlapMMp
+    inputBinding:
+        prefix: --peOverlapMMp
+    sbg:toolDefaultValue: 0.01
+    type:
+    - 'null'
+    - float
+-   id: peOverlapNbasesMin
+    inputBinding:
+        prefix: --peOverlapNbasesMin
+    sbg:toolDefaultValue: 10
+    type:
+    - 'null'
+    - int
+-   id: quantMode
+    inputBinding:
+        prefix: --quantMode
+    sbg:toolDefaultValue: TranscriptomeSAM GeneCounts
+    type:
+    - 'null'
+    - string
+-   id: twopassMode
+    inputBinding:
+        prefix: --twopassMode
+    sbg:toolDefaultValue: Basic
+    type:
+    - 'null'
+    - string
+-   id: examine_coding_effect
+    inputBinding:
+        prefix: --examine_coding_effect
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: FusionGenome
+    inputBinding:
+        prefix: --FusionGenome
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62853e7ad63f7c6d8d7ae5a8, name: GRCh38_v39_CTAT_lib_Mar242022.CUSTOM.tar.gz }
+-   id: star_fusion_genome_untar_path
+    inputBinding:
+        prefix: --star_fusion_genome_untar_path
+    sbg:toolDefaultValue: GRCh38_v39_CTAT_lib_Mar242022.CUSTOM/
+    type:
+    - 'null'
+    - string
+-   id: RSEMgenome
+    inputBinding:
+        prefix: --RSEMgenome
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62853e7ad63f7c6d8d7ae5a5, name: RSEM_GENCODE39.tar.gz }
+-   id: fragment_length_max
+    inputBinding:
+        prefix: --fragment_length_max
+    sbg:toolDefaultValue: 1000
+    type:
+    - 'null'
+    - int
+-   id: append_names
+    inputBinding:
+        prefix: --append_names
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: estimate_rspd
+    inputBinding:
+        prefix: --estimate_rspd
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: assembly
+    inputBinding:
+        prefix: --assembly
+    sbg:toolDefaultValue: hg38_GRCh38
+    type:
+    - 'null'
+    - string
+-   id: annofuse_col_num
+    inputBinding:
+        prefix: --annofuse_col_num
+    sbg:toolDefaultValue: 30
+    type:
+    - 'null'
+    - int
+-   id: fusion_annotator_tar
+    inputBinding:
+        prefix: --fusion_annotator_tar
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue:  { class: 'File', path: '63cff818facdd82011c8d6fe', name: 'GRCh38_v39_fusion_annot_custom.tar.gz' }
+-   id: RNAseQC_GTF
+    inputBinding:
+        prefix: --RNAseQC_GTF
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 62853e7ad63f7c6d8d7ae5a3, name: gencode.v39.primary_assembly.rnaseqc.stranded.gtf }
+-   id: rmats_variable_read_length
+    inputBinding:
+        prefix: --rmats_variable_read_length
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: t1k_abnormal_unmap_flag
+    inputBinding:
+        prefix: --t1k_abnormal_unmap_flag
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: t1k_preset
+    inputBinding:
+        prefix: --t1k_preset
+    sbg:toolDefaultValue: hla
+    type:
+    - 'null'
+    - string
+-   id: t1k_skip_post_analysis
+    inputBinding:
+        prefix: --t1k_skip_post_analysis
+    sbg:toolDefaultValue: true
+    type:
+    - 'null'
+    - boolean
+-   id: hla_rna_ref_seqs
+    inputBinding:
+        prefix: --hla_rna_ref_seqs
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 6669ac8127374715fc3ba3c3, name: hla_v3.43.0_gencode_v39_rna_seq.fa }
+-   id: hla_rna_gene_coords
+    inputBinding:
+        prefix: --hla_rna_gene_coords
+    type:
+    - 'null'
+    - File
+    sbg:suggestedValue: { class: File, path: 6669ac8127374715fc3ba3c1, name: hla_v3.43.0_gencode_v39_rna_coord.fa }
+-   id: aws_test_instance
+    inputBinding:
+        prefix: --aws_test_instance
+    type:
+    - 'null'
+    - boolean
+-   id: outdir
+    inputBinding:
+        prefix: --outdir
+    doc: Path to the output directory where the results will be saved.
+    sbg:category: Input/output options
+    sbg:icon: fas fa-folder-open
+    sbg:toolDefaultValue: ./results
+    type: string
+-   doc: Use to set an upper-limit for the CPU requirement for each process. Should
+        be an integer e.g. `--max_cpus 1`
+    id: max_cpus
+    inputBinding:
+        prefix: --max_cpus
+    label: Maximum number of CPUs that can be requested for any single job.
+    sbg:category: Max job request options
+    sbg:hidden: true
+    sbg:icon: fas fa-microchip
+    sbg:toolDefaultValue: 16
+    type:
+    - 'null'
+    - int
+-   doc: Use to set an upper-limit for the memory requirement for each process. Should
+        be a string in the format integer-unit e.g. `--max_memory '8.GB'`
+    id: max_memory
+    inputBinding:
+        prefix: --max_memory
+    label: Maximum amount of memory that can be requested for any single job.
+    sbg:category: Max job request options
+    sbg:hidden: true
+    sbg:icon: fas fa-memory
+    sbg:pattern: ^\d+(\.\d+)?\.?\s*(K|M|G|T)?B$
+    sbg:toolDefaultValue: 128.GB
+    type:
+    - 'null'
+    - string
+-   doc: Use to set an upper-limit for the time requirement for each process. Should
+        be a string in the format integer-unit e.g. `--max_time '2.h'`
+    id: max_time
+    inputBinding:
+        prefix: --max_time
+    label: Maximum amount of time that can be requested for any single job.
+    sbg:category: Max job request options
+    sbg:hidden: true
+    sbg:icon: far fa-clock
+    sbg:pattern: ^(\d+\.?\s*(s|m|h|day)\s*)+$
+    sbg:toolDefaultValue: 240.h
+    type:
+    - 'null'
+    - string
+-   doc: List of files not added as explicit workflow inputs but required for workflow
+        execution.
+    id: auxiliary_files
+    label: Auxiliary files
+    type:
+    - 'null'
+    -   items: File
+        type: array
+-   doc: Provide parameters through a JSON format input file.
+    id: params_file
+    inputBinding:
+        prefix: -params-file
+    label: Params files
+    sbg:fileTypes: JSON
+    type:
+    - 'null'
+    - File
+outputs:
+-   doc: This is a template output. You can modify the glob pattern to make outputs
+        more specific.
+    id: nf_publishdir
+    label: Publish Directory
+    outputBinding:
+        glob: '*'
+    type:
+    - 'null'
+    -   items: File
+        type: array
+requirements:
+-   class: InlineJavascriptRequirement
