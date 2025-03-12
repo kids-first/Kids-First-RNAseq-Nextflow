@@ -32,7 +32,7 @@ def qc_pe_values(flag){
     def e_msg = ""
     flag.unique().count().map { n ->
         if (n > 1){
-            e_msg += "Inconsistent read lengths\n"
+            e_msg += "Inconsistent pairedness\n"
         }
     }
     flag.map{
