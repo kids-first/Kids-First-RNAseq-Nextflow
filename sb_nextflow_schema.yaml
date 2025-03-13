@@ -522,9 +522,9 @@ inputs:
     type:
     - 'null'
     - string
--   id: RSEMgenome
+-   id: RSEM_genome
     inputBinding:
-        prefix: --RSEMgenome
+        prefix: --RSEM_genome
     type:
     - 'null'
     - File
