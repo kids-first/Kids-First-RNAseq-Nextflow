@@ -49,6 +49,9 @@ doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of conv
 hints:
 -   class: sbg:NextflowExecutionMode
     value: multi-instance
+-   class: "sbg:maxNumberOfParallelInstances"
+    value: 3
+
 inputs:
 -   id: sample_id
     inputBinding:
