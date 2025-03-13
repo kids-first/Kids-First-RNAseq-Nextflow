@@ -67,7 +67,6 @@ workflow {
     // assign output for ease of reference
     strandedness = preprocess_reads.out.strandedness
     is_paired_end = preprocess_reads.out.is_paired_end
-    is_paired_end.view()
     read_length_median = preprocess_reads.out.read_length_median
     read_length_stddev = preprocess_reads.out.read_length_stddev
 

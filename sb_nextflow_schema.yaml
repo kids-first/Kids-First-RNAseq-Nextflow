@@ -1,7 +1,7 @@
 app_content:
     entrypoint: main.nf
 class: nextflow
-executor_version: 24.10.1
+executor_version: 23.04.1
 cwlVersion: None
 doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of converting\
     \ our CWL production workflow to Nextflow.\nOnce development has complete, it\

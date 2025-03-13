@@ -8,7 +8,7 @@ process ALIGNMENT_PAIREDNESS {
     val max_reads
 
     output:
-    env('RESULT'), emit: result
+    env(RESULT), emit: result
 
     script:
     """
