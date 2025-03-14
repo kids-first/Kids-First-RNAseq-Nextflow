@@ -699,14 +699,15 @@ outputs:
 -   id: STAR_final_log
     doc: STAR metricslog file of unique, multi-mapping, unmapped, and chimeric reads
     outputBinding:
-        glob: './results/STAR_ALIGN/*Log.final.out'
+        glob: 'results/*'
     type:
     - File
 -   id: cutadapt_stats
     doc: Cutadapt stats output, only if adapter is supplied.
     outputBinding:
-        glob: './cutadapt/*cutadapt_stats.txt'
+        glob: 'results/cutadapt/*'
     type:
+    - 'null'
     - File
 requirements:
 -   class: InlineJavascriptRequirement
