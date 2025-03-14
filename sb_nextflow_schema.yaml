@@ -696,18 +696,129 @@ inputs:
     - 'null'
     - File
 outputs:
--   id: STAR_final_log
-    doc: STAR metricslog file of unique, multi-mapping, unmapped, and chimeric reads
-    outputBinding:
-        glob: 'results/*'
-    type:
-    - File
 -   id: cutadapt_stats
     doc: Cutadapt stats output, only if adapter is supplied.
     outputBinding:
-        glob: 'results/cutadapt/*'
+        glob: "results/cutadapt/*cutadapt_stats.txt"
     type:
     - 'null'
     - File
+-   id: STAR_chimeric_junctions
+    doc: STAR chimeric junctions
+    outputBinding:
+        glob: "results/STAR_chimeric_junctions/*Chimeric.out.junction.gz"
+    type: 
+    - File
+-   id: STAR_gene_count
+    doc: STAR_genecounts
+    outputBinding:
+        glob: "results/STAR_gene_count/*ReadsPerGene.out.tab.gz"
+    type:
+    - File
+-   id: STAR_junctions_out
+    doc: STARjunction reads
+    outputBinding:
+        glob: "results/STAR_junctions_out/*SJ.out.tab.gz"
+-   id: STAR_final_log
+    doc: STAR metricslog file of unique, multi-mapping, unmapped, and chimeric reads
+    outputBinding:
+        glob: "results/STAR_final_log/*Log.final.out"
+    type:
+    - File
+-   id: STAR_sorted_genomic_cram
+    doc: STAR sorted and indexed genomic alignment cram
+    outputBinding:
+        glob: "results/STAR_sorted_genomic_cram/*cram"
+    secondaryFiles:
+    - pattern: ".crai"
+-   id: STAR-Fusion_results
+    doc: STAR fusion detection from chimeric reads
+    outputBinding:
+        glob: "results/STAR-Fusion_results/*fusion_predictions.abridged.coding_effect.tsv"
+    type:
+    - File
+-   id: arriba_fusion_results
+    doc: Fusion output from Arriba
+    outputBinding:
+        glob: "results/arriba_fusion_results/*arriba_2.2.1.fusions.tsv"
+    type:
+    - File
+-   id: arriba_fusion_viz
+    doc: Fusion output from Arriba
+    outputBinding:
+        glob: "results/arriba_fusion_viz/*pdf"
+    type:
+    - File
+-   id: RSEM_isoform
+    doc: RSEM isoform expression estimates
+    outputBinding:
+        glob: "results/RSEM_isoform/*isoforms.results.gz"
+    type:
+    - File
+-   id: RSEM_gene
+    doc: RSEM gene expression estimates
+    outputBinding:
+        glob: "results/RSEM_gene/*genes.results.gz"
+    type:
+    - File
+-   id: RNASeQC_Metrics
+    doc: Metrics on mapping, intronic, exonic rates, count information, etc
+    outputBinding:
+        glob: "results/RNASeQC_Metrics/*metrics.tsv"
+    type:
+    - File
+-   id: RNASeQC_counts
+    doc: Contains gene tpm, gene read, and exon counts
+    outputBinding:
+        glob: "results/RNASeQC_counts/*RNASeQC.counts.tar.gz"
+    type:
+    - File
+-   id: kallisto_Abundance
+    doc: Gene abundance output from input FASTQ file
+    outputBinding:
+        glob: "results/kallisto_Abundance/*abundance.tsv.gz"
+    type:
+    - File
+-   id: annofuse_filtered_fusions_tsv
+    doc: Filtered fusions called by annoFuse.
+    outputBinding:
+        glob: "results/annofuse_filtered_fusions_tsv/*tsv"
+    type:
+    - File
+-   id: rmats_filtered_alternative_3_prime_splice_sites_jc
+    doc: Alternative 3 prime splice sites JC.txt output from RMATs containing only those calls with 10 or more junction spanning read counts of support
+    outputBinding:
+        glob: "results/rmats_filtered_alternative_3_prime_splice_sites_jc/*filtered.A3SS.MATS.JC.txt"
+    type:
+     - File
+-   id: rmats_filtered_alternative_5_prime_splice_sites_jc
+    doc: Alternative 5 prime splice sites JC.txt output from RMATs containing only those calls with 10 or more junction spanning read counts of support
+    outputBinding:
+        glob: "results/rmats_filtered_alternative_5_prime_splice_sites_jc/*filtered.A5SS.MATS.JC.txt"
+    type:
+     - File
+-   id: rmats_filtered_mutually_exclusive_exons_jc
+    doc: Mutually exclusive exons JC.txt output from RMATs containing only those calls with 10 or more junction spanning read counts of support
+    outputBinding:
+        glob: "results/rmats_filtered_mutually_exclusive_exons_jc/*filtered.MXE.MATS.JC.txt"
+    type:
+     - File
+-   id: rmats_filtered_retained_introns_jc
+    doc: Retained introns JC.txt output from RMATs containing only those calls with 10 or more junction spanning read counts of support
+    outputBinding:
+        glob: "results/rmats_filtered_retained_introns_jc/*filtered.RI.MATS.JC.txt"
+    type:
+    - File
+-   id: rmats_filtered_skipped_exons_jc
+    doc: Skipped exons JC.txt output from RMATs containing only those calls with 10 or more junction spanning read counts of support
+    outputBinding:
+        glob: "results/rmats_filtered_skipped_exons_jc/*filtered.SE.MATS.JC.txt"
+    type:
+    - File
+-   id: t1k_genotype_tsv
+    doc: Genotyping results from T1k
+    outputBinding:
+        glob: "results/t1k_genotype_tsv/*_genotype.tsv"
+
 requirements:
 -   class: InlineJavascriptRequirement
