@@ -145,7 +145,8 @@ workflow preprocess_reads {
             }
             read_length_median = top_read_len.unique()
         }
-        read_length_stddev = !params.read_length_stddev && is_paired_end.map {it} ? strand_info.stdev.unique() : read_length_stddev
+        // Only used by Kallisto and when SE, set to default 0 if PE
+        read_length_stddev = !params.read_length_stddev && !is_paired_end.map {it} ? strand_info.stdev.unique() : 0
     }
 
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
