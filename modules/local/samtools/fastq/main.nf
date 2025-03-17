@@ -1,6 +1,6 @@
 process SAMTOOLS_FASTQ {
-    label 'C16'
-    container "staphb/samtools:1.20"
+    label 'C8'
+    container "pgc-images.sbgenomics.com/d3b-bixu/samtools:1.15.1"
 
     input:
     tuple val(meta), path(input_align)

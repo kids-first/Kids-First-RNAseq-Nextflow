@@ -1,5 +1,5 @@
 process ALIGNMENT_PAIREDNESS {
-    label 'C8'
+    label 'C4'
     container "quay.io/biocontainers/pysam:0.22.0--py310h41dec4a_0"
 
     input:
@@ -16,7 +16,7 @@ process ALIGNMENT_PAIREDNESS {
     --input_reads $input_reads \\
     --input_reference $input_reference \\
     --max_reads $max_reads \\
-    --threads $task.cpus`
+    --threads 4`
 
     if [ \$RESULT == 'ReadType:MIXED' ]
     then
