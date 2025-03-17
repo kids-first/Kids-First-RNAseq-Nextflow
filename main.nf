@@ -23,8 +23,6 @@ workflow {
     input_rgs = params.input_rgs_list ? Channel.fromList(params.input_rgs_list) : Channel.value([])
     input_reads = params.input_reads_list ? Channel.fromPath(params.input_reads_list) : Channel.value([])
     input_mates = params.input_mates_list ? Channel.fromPath(params.input_mates_list) : Channel.value([])
-    read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([]) // channel: val(int), optional
-    read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([]) // channel: val(int), optional
     max_reads = Channel.value(params.max_reads) // channel: val(int)
     line_filter = Channel.value(params.line_filter) // channel: val(str)
     sample_id = Channel.value(params.sample_id) // channel: val(str)
@@ -56,8 +54,6 @@ workflow {
         input_alignment_reads,
         input_fastq_reads,
         line_filter,
-        read_length_median,
-        read_length_stddev,
         max_reads,
         sample_id,
         reference,

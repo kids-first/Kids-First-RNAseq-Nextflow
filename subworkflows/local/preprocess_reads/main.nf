@@ -68,13 +68,29 @@ def qc_strand_values(strand){
 }
 
 
+def qc_stdev_values(stdev, flag){
+    if (flag.map{it == false} && !params.read_length_stddev){
+        stdev.unique().count().map { n ->
+            if (n > 1){
+                if (params.read_length_stddev){
+                    return params.read_length_stddev
+                }
+                else{
+                    error("Inconsistent read stddev. Revisit inputs and/or set params.read_length_stddev to override")
+                }
+            }
+        }
+        return stdev.unique()
+    }
+    return 0
+}
+
+
 workflow preprocess_reads {
     take:
     input_alignment_reads // channel: path, Optional unless no input_fastq_reads
     input_fastq_reads // channel: [val(rgs), path(FASTQ | [FASTQ])], Optional unless no input_alignment_reads
     line_filter // channel: val(string)
-    read_length_median // channel: value(int)
-    read_length_stddev // channel: value(int)
     max_reads // channel: val(int)
     sample_id // channel: val(string)
     reference // channel: path(FASTA)
@@ -146,7 +162,7 @@ workflow preprocess_reads {
             read_length_median = top_read_len.unique()
         }
         // Only used by Kallisto and when SE, set to default 0 if PE
-        read_length_stddev = !params.read_length_stddev && !is_paired_end.map {it} ? strand_info.stdev.unique() : 0
+        read_length_stddev = qc_stdev_values(strand_info.stdev, is_paired_end)
     }
 
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
