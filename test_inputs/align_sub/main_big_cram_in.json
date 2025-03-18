@@ -13,5 +13,6 @@
     "RNAseQC_GTF": "../RNASEQ_REFS/gencode.v39.primary_assembly.rnaseqc.stranded.gtf",
     "hla_rna_ref_seqs": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_seq.fa",
     "hla_rna_gene_coords": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_coord.fa",
-    "aws_test_instance": true
+    "aws_test_instance": true,
+    "readFilesCommand": "zcat"
 }

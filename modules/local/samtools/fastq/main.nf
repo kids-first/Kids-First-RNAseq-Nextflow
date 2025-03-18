@@ -15,7 +15,7 @@ process SAMTOOLS_FASTQ {
         cram_reference != "" ? "--reference $cram_reference"
         : ''
     def pe_output_str = "-1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
-    def se_output_str = "- | gzip -2 -c > ${input_align.getBaseName()}.converted.fastq.gz"
+    def se_output_str = "- | bgzip -@ $task.cpus -l 2 -c  > ${input_align.getBaseName()}.converted.fastq.gz"
     // is_paired_end is passed as an array to satisfy both single file and scatter
     def output_fastq =
         is_paired_end[0] ? pe_output_str
@@ -30,10 +30,10 @@ process SAMTOOLS_FASTQ {
     $input_align \\
     | samtools fastq \\
     -c 2 \\
+    -F 2304 \\
     -@ $task.cpus \\
     $output_fastq
     """
-
 
     stub:
     """
