@@ -11,8 +11,11 @@ Once development has complete, it will become a prod product.
 
 ## Current State
 The workflow is in alpha production shape.
-Currently, you __cannot__ mix single and and paried end data with this workflow.
+Currently, you __cannot__ mix single and and paired end data with this workflow.
 In the `test_inputs` dir, there are examples of various input situations that have been tested.
+It can now run on CAVATICA, you can push this app by:
+ - [Install sbpack](https://docs.cavatica.org/docs/bring-nextflow-apps-to-cavatica#about-sbpack)
+ - Using command `sbpack_nf --profile {your_profile} --appid {username}/{project}/kfdrc-rnaseq-nextflow --workflow-path /path/to/this/repo/Kids-First-RNAseq-Nextflow/ --entrypoint main.nf --sb-schema sb_nextflow_schema.yaml`
 
 ## Preprocess Reads Subworkflow:
 The workflow takes in a mix of alignment files (BAM/CRAM) and fastq (single or paired end) and does the following:

@@ -3,6 +3,17 @@ app_content:
 class: nextflow
 executor_version: 23.04.1
 cwlVersion: None
+requirements:
+-   class: InlineJavascriptRequirement
+-   class: ShellCommandRequirement
+-   class: InitialWorkDirRequirement
+    listing:
+    - entryname: input_params.json
+      entry: |
+          $(JSON.stringify({input_rgs_list: inputs.input_rgs_list ? inputs.input_rgs_list : "",
+          input_reads_list: inputs.input_reads_list ? inputs.input_reads_list.map(function(e) {return e.path}) : "",
+          input_mates_list: inputs.input_mates_list ? inputs.input_mates_list.map(function(e) {return e.path}) : "",
+          input_alignment_reads: inputs.input_alignment_reads ? inputs.input_alignment_reads.map(function(e) {return e.path}) : ""}))
 doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of converting\
     \ our CWL production workflow to Nextflow.\nOnce development has complete, it\
     \ will become a prod product.\n\n![image](docs/kids_first_logo.svg#sbg_width=660px)\n\
@@ -51,7 +62,11 @@ hints:
     value: multi-instance
 -   class: "sbg:maxNumberOfParallelInstances"
     value: 3
-
+arguments:
+-   position: 0
+    shellQuote: false
+    valueFrom: >
+        -params-file input_params.json
 inputs:
 -   id: sample_id
     inputBinding:
@@ -66,24 +81,18 @@ inputs:
     - string
     doc: String to use as basename for outputs
 -   id: input_reads_list
-    inputBinding:
-        prefix: --input_reads_list
     type:
     - 'null'
     - type: array
       items: File
     doc: List of FASTQ files to process. If paired end, it's R1s only
 -   id: input_mates_list
-    inputBinding:
-        prefix: --input_mates_list
     type:
     - 'null'
     - type: array
       items: File
     doc: List of R2 FASTQ files to process, if paired end
 -   id: input_rgs_list
-    inputBinding:
-        prefix: --input_rgs_list
     type:
     - 'null'
     - type: array
@@ -122,8 +131,6 @@ inputs:
         - rf-stranded
         - fr-stranded
 -   id: input_alignment_reads
-    inputBinding:
-        prefix: --input_alignment_reads
     type:
     - 'null'
     - type: array
@@ -819,6 +826,3 @@ outputs:
     doc: Genotyping results from T1k
     outputBinding:
         glob: "results/t1k_genotype_tsv/*_genotype.tsv"
-
-requirements:
--   class: InlineJavascriptRequirement
