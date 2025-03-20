@@ -14,23 +14,23 @@ process SAMTOOLS_FASTQ {
     def cram_ref_param =
         cram_reference != "" ? "--reference $cram_reference"
         : ''
-    def pe_output_str = "-1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
+    def pe_output_str = "-s ${input_align.getBaseName()}.singletons.fastq.gz -1 ${input_align.getBaseName()}.converted_1.fastq.gz -2 ${input_align.getBaseName()}.converted_2.fastq.gz -"
     def se_output_str = "- | bgzip -@ $task.cpus -l 2 -c  > ${input_align.getBaseName()}.converted.fastq.gz"
     // is_paired_end is passed as an array to satisfy both single file and scatter
     def output_fastq =
         is_paired_end[0] ? pe_output_str
         : se_output_str
     """
-    samtools sort \\
-    -m 1G \\
-    -n \\
-    -O SAM \\
+    samtools collate \\
+    $input_align \\
+    -O \\
+    --output-fmt SAM \\
+    -f \\
+    -r 50000 \\
     -@ $task.cpus \\
     $cram_ref_param \\
-    $input_align \\
     | samtools fastq \\
     -c 2 \\
-    -F 2304 \\
     -@ $task.cpus \\
     $output_fastq
     """
