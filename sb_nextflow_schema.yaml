@@ -773,7 +773,7 @@ outputs:
 -   id: RNASeQC_Metrics
     doc: Metrics on mapping, intronic, exonic rates, count information, etc
     outputBinding:
-        glob: "results/RNASeQC_Metrics/*metrics.tsv"
+        glob: "results/RNASeQC_Metrics/output/*metrics.tsv"
     type:
     - File
 -   id: RNASeQC_counts

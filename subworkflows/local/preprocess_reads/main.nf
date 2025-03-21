@@ -152,7 +152,6 @@ workflow preprocess_reads {
             other: true
         }.set { strand_info }
         if (!params.read_length_median){
-            println "Checking read len median"
             top_read_len.unique().count().map { n ->
                 if (n > 1){
                     error("Inconsistent read lengths")
