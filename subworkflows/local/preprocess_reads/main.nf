@@ -68,21 +68,19 @@ def qc_strand_values(strand){
 }
 
 
-def qc_stdev_values(stdev, flag){
-    if (flag.map{it == false} && !params.read_length_stddev){
-        stdev.unique().count().map { n ->
-            if (n > 1){
-                if (params.read_length_stddev){
-                    return params.read_length_stddev
-                }
-                else{
-                    error("Inconsistent read stddev. Revisit inputs and/or set params.read_length_stddev to override")
-                }
+def qc_stdev_values(stdev){
+    println "Passed SE and params criteria"
+    stdev.unique().count().map { n ->
+        if (n > 1){
+            if (params.read_length_stddev){
+                return params.read_length_stddev
+            }
+            else{
+                error("Inconsistent read stddev. Revisit inputs and/or set params.read_length_stddev to override")
             }
         }
-        return stdev.unique()
     }
-    return 0
+    return stdev.unique()
 }
 
 
@@ -129,13 +127,13 @@ workflow preprocess_reads {
     // Collate PE flag with FASTQ inputs as a check
     is_paired_end = is_paired_end.concat(
         reads.map{ _rgs, f ->
-        if (f instanceof List){
-            return true
+            if (f instanceof List){
+                return true
+            }
+            else{
+                return false
+            }
         }
-        else{
-            return false
-        }
-    }
     )
     // Final check of is_paired_end - all should match, if not, need params override
     is_paired_end = qc_pe_values(is_paired_end)
@@ -153,7 +151,8 @@ workflow preprocess_reads {
                 return test == "unstranded" ? "default" : (test == "RF" ? "rf-stranded" : "fr-stranded")
             other: true
         }.set { strand_info }
-        if (!params.read_length_median){ 
+        if (!params.read_length_median){
+            println "Checking read len median"
             top_read_len.unique().count().map { n ->
                 if (n > 1){
                     error("Inconsistent read lengths")
@@ -162,9 +161,9 @@ workflow preprocess_reads {
             read_length_median = top_read_len.unique()
         }
         // Only used by Kallisto and when SE, set to default 0 if PE
-        read_length_stddev = qc_stdev_values(strand_info.stdev, is_paired_end)
+        read_length_stddev = strand_info.stdev.ifEmpty(0)
+        read_length_stddev = qc_pe_values(read_length_stddev)
     }
-
     // standardize output of strand_info to match unstranded, rf-stranded, or fr-stranded
     strandedness = params.strandedness ?: strand_info.strand
     strandedness = qc_pe_values(strandedness)
