@@ -643,7 +643,9 @@ inputs:
     sbg:category: Input/output options
     sbg:icon: fas fa-folder-open
     sbg:toolDefaultValue: ./results
-    type: string
+    type:
+     - 'null'
+     - string
 -   doc: Use to set an upper-limit for the CPU requirement for each process. Should
         be an integer e.g. `--max_cpus 1`
     id: max_cpus

@@ -79,7 +79,6 @@ workflow {
         gtf_anno,
         RSEM_genome,
         kallisto_idx,
-        sample_id,
         RNAseQC_GTF,
         hla_rna_ref_seqs,
         hla_rna_gene_coords,

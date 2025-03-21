@@ -30,7 +30,6 @@ workflow align_analyze_rnaseq {
     RSEMgenome // channel: path(TAR.GZ)
     // kallisto
     kallisto_idx // channel: path(IDX)
-    sample_id // channel: va(str)
     // RNAseqc
     RNAseQC_GTF // channel: path(GTF)
     // T1K
@@ -56,7 +55,7 @@ workflow align_analyze_rnaseq {
         "KALLISTO": strandedness.map{it.startsWith("rf") ? "rf-stranded" : (it.startsWith("fr") ? "fr-stranded" : "")},
         "RNASEQC": strandedness.map{it.startsWith("rf") ? "rf" : (it.startsWith("fr") ? "fr" : "")}
         ]
-    KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, sample_id, read_length_stddev, read_length_median, is_paired_end)
+    KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, outFileNamePrefix, read_length_stddev, read_length_median, is_paired_end)
 
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
     ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION)
