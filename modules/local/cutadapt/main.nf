@@ -8,7 +8,7 @@ process CUTADAPT {
 
     output:
     tuple val(meta_reads), path("TRIMMED.*"), emit: fastq_out
-    tuple val(meta_reads), path("cutadapt_stats.txt"), emit: cutadapt_metrics
+    tuple val(meta_reads), path("*cutadapt_stats.txt"), emit: cutadapt_metrics
 
     script:
     def args = task.ext.args ?: ''
