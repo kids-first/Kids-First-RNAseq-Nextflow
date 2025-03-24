@@ -94,6 +94,7 @@ workflow preprocess_reads {
     reference // channel: path(FASTA)
     annotation_gtf // channel: path(GTF)
     kallisto_idx // channel: path(IDX)
+    output_basename // channel: val(string)
 
 
     main:
@@ -169,7 +170,7 @@ workflow preprocess_reads {
     // collate user input and calculated values into one list
 
     if (params.cutadapt_r1_adapter || params.cutadapt_r2_adapter || params.cutadapt_min_len || params.cutadapt_quality_base || params.cutadapt_quality_cutoff) {
-        CUTADAPT(reads)
+        CUTADAPT(reads, output_basename)
         reads = CUTADAPT.out.fastq_out
     }
     emit:

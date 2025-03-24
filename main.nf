@@ -58,7 +58,8 @@ workflow {
         sample_id,
         reference,
         gtf_anno,
-        kallisto_idx
+        kallisto_idx,
+        output_basename
     )
     // assign output for ease of reference
     strandedness = preprocess_reads.out.strandedness
