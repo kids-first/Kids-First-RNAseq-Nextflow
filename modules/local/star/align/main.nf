@@ -46,7 +46,8 @@ process STAR_ALIGN {
     --outFileNamePrefix "${outFileNamePrefix}." \\
     --runThreadN $task.cpus \\
     $star_ext_args \\
-    && pigz *tab
+    && pigz *tab \\
+    && rm -rf ./${genomeDir.getBaseName().replace(".tar", "")}
     """
 
 }

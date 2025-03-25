@@ -68,6 +68,14 @@ arguments:
     valueFrom: >
         -params-file input_params.json
 inputs:
+-   id: sbg_run
+    inputBinding:
+        prefix: --sbg_run
+    type:
+    - 'null'
+    - boolean
+    sbg:toolDefaultValue: true
+    doc: Flag to use optimizations for SBG platform
 -   id: sample_id
     inputBinding:
         prefix: --sample_id

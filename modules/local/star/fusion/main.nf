@@ -21,7 +21,8 @@ process STAR_FUSION {
     --CPU $task.cpus \\
     $star_ext_args \\
     && mv STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv ${output_basename}.STAR-1.10.1.fusion_predictions.abridged.coding_effect.tsv \\
-    && pigz -c $chimeric_junction > ${chimeric_junction.getName()}.gz
+    && pigz -c $chimeric_junction > ${chimeric_junction.getName()}.gz \\
+    && rm -rf ./${params.star_fusion_genome_untar_path}
     """
 
 }
