@@ -16,7 +16,11 @@ requirements:
           input_mates_list: inputs.input_mates_list ? inputs.input_mates_list.map(function(e) {return e.path}) : "",
           input_alignment_reads: inputs.input_alignment_reads ? inputs.input_alignment_reads.map(function(e) {return e.path}) : "",
           alignSJstitchMismatchNmax: inputs.alignSJstitchMismatchNmax ? inputs.alignSJstitchMismatchNmax : "",
-          chimScoreJunctionNonGTAG: inputs.chimScoreJunctionNonGTAG ? inputs.chimScoreJunctionNonGTAG : ""
+          chimScoreJunctionNonGTAG: inputs.chimScoreJunctionNonGTAG ? inputs.chimScoreJunctionNonGTAG : "",
+          chimOutType: inputs.chimOutType ? inputs.chimOutType : "",
+          outSAMattributes: inputs.outSAMattributes ? inputs.outSAMattributes : "",
+          outSAMtype: inputs.outSAMtype ? inputs.outSAMtype : "",
+          quantMode: inputs.quantMode ? inputs.quantMode : ""
           }))
 doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of converting\
     \ our CWL production workflow to Nextflow.\nOnce development has complete, it\
@@ -354,8 +358,6 @@ inputs:
     - 'null'
     - int
 -   id: chimOutType
-    inputBinding:
-        prefix: --chimOutType
     default: "Junctions WithinBAM SoftClip"
     type:
     - 'null'
@@ -464,8 +466,6 @@ inputs:
     - 'null'
     - string
 -   id: outSAMattributes
-    inputBinding:
-        prefix: --outSAMattributes
     default: "NH HI AS nM NM ch"
     type:
     - 'null'
@@ -478,8 +478,6 @@ inputs:
     - 'null'
     - string
 -   id: outSAMtype
-    inputBinding:
-        prefix: --outSAMtype
     default: "BAM Unsorted"
     type:
     - 'null'
@@ -506,8 +504,6 @@ inputs:
     - 'null'
     - int
 -   id: quantMode
-    inputBinding:
-        prefix: --quantMode
     default: "TranscriptomeSAM GeneCounts"
     type:
     - 'null'
