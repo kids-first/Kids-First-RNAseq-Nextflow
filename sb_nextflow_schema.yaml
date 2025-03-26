@@ -10,10 +10,14 @@ requirements:
     listing:
     - entryname: input_params.json
       entry: |
-          $(JSON.stringify({input_rgs_list: inputs.input_rgs_list ? inputs.input_rgs_list : "",
+          $(JSON.stringify({
+          input_rgs_list: inputs.input_rgs_list ? inputs.input_rgs_list : "",
           input_reads_list: inputs.input_reads_list ? inputs.input_reads_list.map(function(e) {return e.path}) : "",
           input_mates_list: inputs.input_mates_list ? inputs.input_mates_list.map(function(e) {return e.path}) : "",
-          input_alignment_reads: inputs.input_alignment_reads ? inputs.input_alignment_reads.map(function(e) {return e.path}) : ""}))
+          input_alignment_reads: inputs.input_alignment_reads ? inputs.input_alignment_reads.map(function(e) {return e.path}) : "",
+          alignSJstitchMismatchNmax: inputs.alignSJstitchMismatchNmax ? inputs.alignSJstitchMismatchNmax : "",
+          chimScoreJunctionNonGTAG: inputs.chimScoreJunctionNonGTAG ? inputs.chimScoreJunctionNonGTAG : ""
+          }))
 doc: "# Kids First RNAseq Nextflow\nThis repo is currently a dev project of converting\
     \ our CWL production workflow to Nextflow.\nOnce development has complete, it\
     \ will become a prod product.\n\n![image](docs/kids_first_logo.svg#sbg_width=660px)\n\
@@ -74,7 +78,7 @@ inputs:
     type:
     - 'null'
     - boolean
-    sbg:toolDefaultValue: true
+    default: true
     doc: Flag to use optimizations for SBG platform
 -   id: sample_id
     inputBinding:
@@ -156,14 +160,14 @@ inputs:
 -   id: max_reads
     inputBinding:
         prefix: --max_reads
-    sbg:toolDefaultValue: 200000
+    default: 200000
     type:
     - 'null'
     - int
 -   id: line_filter
     inputBinding:
         prefix: --line_filter
-    sbg:toolDefaultValue: ^@RG
+    default: ^@RG
     type:
     - 'null'
     - string
@@ -242,287 +246,283 @@ inputs:
 -   id: readFilesCommand
     inputBinding:
         prefix: --readFilesCommand
-    sbg:toolDefaultValue: zcat
+    default: zcat
     type:
     - 'null'
     - string
 -   id: alignInsertionFlush
     inputBinding:
         prefix: --alignInsertionFlush
-    sbg:toolDefaultValue: None
+    default: None
     type:
     - 'null'
     - string
 -   id: alignIntronMax
     inputBinding:
         prefix: --alignIntronMax
-    sbg:toolDefaultValue: 1000000
+    default: 1000000
     type:
     - 'null'
     - int
 -   id: alignMatesGapMax
     inputBinding:
         prefix: --alignMatesGapMax
-    sbg:toolDefaultValue: 1000000
+    default: 1000000
     type:
     - 'null'
     - int
 -   id: alignSJDBoverhangMin
     inputBinding:
         prefix: --alignSJDBoverhangMin
-    sbg:toolDefaultValue: 1
+    default: 1
     type:
     - 'null'
     - int
 -   id: alignSJoverhangMin
     inputBinding:
         prefix: --alignSJoverhangMin
-    sbg:toolDefaultValue: 8
+    default: 8
     type:
     - 'null'
     - int
 -   id: alignSJstitchMismatchNmax
-    inputBinding:
-        prefix: --alignSJstitchMismatchNmax
-    sbg:toolDefaultValue: 5 -1 5 5
+    default: "5 -1 5 5"
     type:
     - 'null'
     - string
 -   id: alignSoftClipAtReferenceEnds
     inputBinding:
         prefix: --alignSoftClipAtReferenceEnds
-    sbg:toolDefaultValue: 'Yes'
+    default: 'Yes'
     type:
     - 'null'
     - string
 -   id: alignSplicedMateMapLmin
     inputBinding:
         prefix: --alignSplicedMateMapLmin
-    sbg:toolDefaultValue: 0
+    default: 0
     type:
     - 'null'
     - int
 -   id: alignSplicedMateMapLminOverLmate
     inputBinding:
         prefix: --alignSplicedMateMapLminOverLmate
-    sbg:toolDefaultValue: 0.5
+    default: 0.5
     type:
     - 'null'
     - float
 -   id: chimJunctionOverhangMin
     inputBinding:
         prefix: --chimJunctionOverhangMin
-    sbg:toolDefaultValue: 10
+    default: 10
     type:
     - 'null'
     - int
 -   id: chimMainSegmentMultNmax
     inputBinding:
         prefix: --chimMainSegmentMultNmax
-    sbg:toolDefaultValue: 1
+    default: 1
     type:
     - 'null'
     - int
 -   id: chimMultimapNmax
     inputBinding:
         prefix: --chimMultimapNmax
-    sbg:toolDefaultValue: 50
+    default: 50
     type:
     - 'null'
     - int
 -   id: chimMultimapScoreRange
     inputBinding:
         prefix: --chimMultimapScoreRange
-    sbg:toolDefaultValue: 1
+    default: 1
     type:
     - 'null'
     - int
 -   id: chimNonchimScoreDropMin
     inputBinding:
         prefix: --chimNonchimScoreDropMin
-    sbg:toolDefaultValue: 20
+    default: 20
     type:
     - 'null'
     - int
 -   id: chimOutJunctionFormat
     inputBinding:
         prefix: --chimOutJunctionFormat
-    sbg:toolDefaultValue: 1
+    default: 1
     type:
     - 'null'
     - int
 -   id: chimOutType
     inputBinding:
         prefix: --chimOutType
-    sbg:toolDefaultValue: Junctions WithinBAM SoftClip
+    default: "Junctions WithinBAM SoftClip"
     type:
     - 'null'
     - string
 -   id: chimScoreDropMax
     inputBinding:
         prefix: --chimScoreDropMax
-    sbg:toolDefaultValue: 30
+    default: 30
     type:
     - 'null'
     - int
 -   id: chimScoreJunctionNonGTAG
-    inputBinding:
-        prefix: --chimScoreJunctionNonGTAG
-    sbg:toolDefaultValue: -1
+    default: -1
     type:
     - 'null'
     - int
 -   id: chimScoreSeparation
     inputBinding:
         prefix: --chimScoreSeparation
-    sbg:toolDefaultValue: 1
+    default: 1
     type:
     - 'null'
     - int
 -   id: chimSegmentMin
     inputBinding:
         prefix: --chimSegmentMin
-    sbg:toolDefaultValue: 10
+    default: 10
     type:
     - 'null'
     - int
 -   id: chimSegmentReadGapMax
     inputBinding:
         prefix: --chimSegmentReadGapMax
-    sbg:toolDefaultValue: 3
+    default: 3
     type:
     - 'null'
     - int
 -   id: genomeLoad
     inputBinding:
         prefix: --genomeLoad
-    sbg:toolDefaultValue: NoSharedMemory
+    default: NoSharedMemory
     type:
     - 'null'
     - string
 -   id: limitSjdbInsertNsj
     inputBinding:
         prefix: --limitSjdbInsertNsj
-    sbg:toolDefaultValue: 1200000
+    default: 1200000
     type:
     - 'null'
     - int
 -   id: outFilterIntronMotifs
     inputBinding:
         prefix: --outFilterIntronMotifs
-    sbg:toolDefaultValue: None
+    default: None
     type:
     - 'null'
     - string
 -   id: outFilterMatchNminOverLread
     inputBinding:
         prefix: --outFilterMatchNminOverLread
-    sbg:toolDefaultValue: 0.33
+    default: 0.33
     type:
     - 'null'
     - float
 -   id: outFilterMismatchNmax
     inputBinding:
         prefix: --outFilterMismatchNmax
-    sbg:toolDefaultValue: 999
+    default: 999
     type:
     - 'null'
     - int
 -   id: outFilterMismatchNoverLmax
     inputBinding:
         prefix: --outFilterMismatchNoverLmax
-    sbg:toolDefaultValue: 0.1
+    default: 0.1
     type:
     - 'null'
     - float
 -   id: outFilterMultimapNmax
     inputBinding:
         prefix: --outFilterMultimapNmax
-    sbg:toolDefaultValue: 50
+    default: 50
     type:
     - 'null'
     - int
 -   id: outFilterScoreMinOverLread
     inputBinding:
         prefix: --outFilterScoreMinOverLread
-    sbg:toolDefaultValue: 0.33
+    default: 0.33
     type:
     - 'null'
     - float
 -   id: outFilterType
     inputBinding:
         prefix: --outFilterType
-    sbg:toolDefaultValue: BySJout
+    default: BySJout
     type:
     - 'null'
     - string
 -   id: outReadsUnmapped
     inputBinding:
         prefix: --outReadsUnmapped
-    sbg:toolDefaultValue: None
+    default: None
     type:
     - 'null'
     - string
 -   id: outSAMattributes
     inputBinding:
         prefix: --outSAMattributes
-    sbg:toolDefaultValue: NH HI AS nM NM ch
+    default: "NH HI AS nM NM ch"
     type:
     - 'null'
     - string
 -   id: outSAMstrandField
     inputBinding:
         prefix: --outSAMstrandField
-    sbg:toolDefaultValue: intronMotif
+    default: intronMotif
     type:
     - 'null'
     - string
 -   id: outSAMtype
     inputBinding:
         prefix: --outSAMtype
-    sbg:toolDefaultValue: BAM Unsorted
+    default: "BAM Unsorted"
     type:
     - 'null'
     - string
 -   id: outSAMunmapped
     inputBinding:
         prefix: --outSAMunmapped
-    sbg:toolDefaultValue: Within
+    default: Within
     type:
     - 'null'
     - string
 -   id: peOverlapMMp
     inputBinding:
         prefix: --peOverlapMMp
-    sbg:toolDefaultValue: 0.01
+    default: 0.01
     type:
     - 'null'
     - float
 -   id: peOverlapNbasesMin
     inputBinding:
         prefix: --peOverlapNbasesMin
-    sbg:toolDefaultValue: 10
+    default: 10
     type:
     - 'null'
     - int
 -   id: quantMode
     inputBinding:
         prefix: --quantMode
-    sbg:toolDefaultValue: TranscriptomeSAM GeneCounts
+    default: "TranscriptomeSAM GeneCounts"
     type:
     - 'null'
     - string
 -   id: twopassMode
     inputBinding:
         prefix: --twopassMode
-    sbg:toolDefaultValue: Basic
+    default: Basic
     type:
     - 'null'
     - string
 -   id: examine_coding_effect
     inputBinding:
         prefix: --examine_coding_effect
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
@@ -536,7 +536,7 @@ inputs:
 -   id: star_fusion_genome_untar_path
     inputBinding:
         prefix: --star_fusion_genome_untar_path
-    sbg:toolDefaultValue: GRCh38_v39_CTAT_lib_Mar242022.CUSTOM/
+    default: GRCh38_v39_CTAT_lib_Mar242022.CUSTOM/
     type:
     - 'null'
     - string
@@ -550,35 +550,35 @@ inputs:
 -   id: fragment_length_max
     inputBinding:
         prefix: --fragment_length_max
-    sbg:toolDefaultValue: 1000
+    default: 1000
     type:
     - 'null'
     - int
 -   id: append_names
     inputBinding:
         prefix: --append_names
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
 -   id: estimate_rspd
     inputBinding:
         prefix: --estimate_rspd
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
 -   id: assembly
     inputBinding:
         prefix: --assembly
-    sbg:toolDefaultValue: hg38_GRCh38
+    default: hg38_GRCh38
     type:
     - 'null'
     - string
 -   id: annofuse_col_num
     inputBinding:
         prefix: --annofuse_col_num
-    sbg:toolDefaultValue: 30
+    default: 30
     type:
     - 'null'
     - int
@@ -599,28 +599,28 @@ inputs:
 -   id: rmats_variable_read_length
     inputBinding:
         prefix: --rmats_variable_read_length
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
 -   id: t1k_abnormal_unmap_flag
     inputBinding:
         prefix: --t1k_abnormal_unmap_flag
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
 -   id: t1k_preset
     inputBinding:
         prefix: --t1k_preset
-    sbg:toolDefaultValue: hla
+    default: hla
     type:
     - 'null'
     - string
 -   id: t1k_skip_post_analysis
     inputBinding:
         prefix: --t1k_skip_post_analysis
-    sbg:toolDefaultValue: true
+    default: true
     type:
     - 'null'
     - boolean
@@ -650,7 +650,7 @@ inputs:
     doc: Path to the output directory where the results will be saved.
     sbg:category: Input/output options
     sbg:icon: fas fa-folder-open
-    sbg:toolDefaultValue: ./results
+    default: ./results
     type:
      - 'null'
      - string
@@ -663,7 +663,7 @@ inputs:
     sbg:category: Max job request options
     sbg:hidden: true
     sbg:icon: fas fa-microchip
-    sbg:toolDefaultValue: 16
+    default: 16
     type:
     - 'null'
     - int
@@ -677,7 +677,7 @@ inputs:
     sbg:hidden: true
     sbg:icon: fas fa-memory
     sbg:pattern: ^\d+(\.\d+)?\.?\s*(K|M|G|T)?B$
-    sbg:toolDefaultValue: 128.GB
+    default: 128.GB
     type:
     - 'null'
     - string
@@ -691,7 +691,7 @@ inputs:
     sbg:hidden: true
     sbg:icon: far fa-clock
     sbg:pattern: ^(\d+\.?\s*(s|m|h|day)\s*)+$
-    sbg:toolDefaultValue: 240.h
+    default: 240.h
     type:
     - 'null'
     - string
