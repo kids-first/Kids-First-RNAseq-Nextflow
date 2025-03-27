@@ -4,7 +4,6 @@ process CUTADAPT {
 
     input:
     tuple val(meta_reads), path(reads)
-    val(output_basename)
 
     output:
     tuple val(meta_reads), path("TRIMMED.*"), emit: fastq_out
@@ -16,7 +15,7 @@ process CUTADAPT {
     cutadapt -j $task.cpus \\
     $args \\
     $reads \\
-    > ${output_basename}.cutadapt_stats.txt
+    > ${task.prefix}.cutadapt_stats.txt
     """
 
 

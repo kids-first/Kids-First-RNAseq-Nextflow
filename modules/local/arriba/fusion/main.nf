@@ -6,7 +6,6 @@ process ARRIBA_FUSION {
     tuple path(genome_aligned_bam), path(genome_aligned_bai)
     path(reference_fasta)
     path(gtf_anno)
-    val(outFileNamePrefix)
     val(arriba_strand_flag)
 
     output:
@@ -20,8 +19,8 @@ process ARRIBA_FUSION {
     -a $reference_fasta \\
     -g $gtf_anno \\
     -s $arriba_strand_flag \\
-    -o ${outFileNamePrefix}.arriba_2.2.1.fusions.tsv \\
-    -O ${outFileNamePrefix}.arriba_2.2.1.discarded_fusions.tsv \\
+    -o ${task.prefix}.arriba_2.2.1.fusions.tsv \\
+    -O ${task.prefix}.arriba_2.2.1.discarded_fusions.tsv \\
     $arriba_ext_args
     """
 

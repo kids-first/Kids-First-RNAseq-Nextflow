@@ -11,12 +11,11 @@ workflow annofuse_subworkflow {
     fusion_annotator_tar // channel: path(TAR.GZ)
     rsem_expr_file // channel: path(GZ)
     star_fusion_output_file // channel: path(TSV)
-    output_basename // channel: val(str)
 
     main:
-    FORMAT_ARRIBA(arriba_output_file, output_basename)
-    ANNOTATE_ARRIBA(FORMAT_ARRIBA.out.formatted_fusion_tsv, fusion_annotator_tar, output_basename)
-    ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_id, output_basename)
+    FORMAT_ARRIBA(arriba_output_file)
+    ANNOTATE_ARRIBA(FORMAT_ARRIBA.out.formatted_fusion_tsv, fusion_annotator_tar)
+    ANNOFUSE(ANNOTATE_ARRIBA.out.annotated_tsv, star_fusion_output_file, rsem_expr_file, sample_id)
 
     emit:
     annofuse_filtered_fusions_tsv = ANNOFUSE.out.filtered_fusions_tsv // channel: path(TSV)

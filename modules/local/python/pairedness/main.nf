@@ -16,7 +16,7 @@ process ALIGNMENT_PAIREDNESS {
     --input_reads $input_reads \\
     --input_reference $input_reference \\
     --max_reads $max_reads \\
-    --threads 4`
+    --threads $task.cpus`
 
     if [ \$RESULT == 'ReadType:MIXED' ]
     then

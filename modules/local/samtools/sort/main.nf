@@ -4,7 +4,6 @@ process SAMTOOLS_SORT {
 
     input:
     path(unsorted_bam)
-    val(output_basename)
 
     output:
     path('*.bam'), emit: sorted_bam
@@ -17,11 +16,11 @@ process SAMTOOLS_SORT {
     --threads $task.cpus \\
     -m 1G \\
     -O bam \\
-    > ${output_basename}.sorted.bam \\
+    > ${task.prefix}.sorted.bam \\
     && samtools index \\
     -@ $task.cpus \\
-    ${output_basename}.sorted.bam \\
-    ${output_basename}.sorted.bai
+    ${task.prefix}.sorted.bam \\
+    ${task.prefix}.sorted.bai
     """
 
     stub:

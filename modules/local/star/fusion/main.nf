@@ -5,7 +5,6 @@ process STAR_FUSION {
     input:
     path(genome_tar)
     path(chimeric_junction)
-    val(output_basename)
 
     output:
     path('*fusion_predictions.abridged.coding_effect.tsv'), emit: abridged_coding
@@ -20,7 +19,7 @@ process STAR_FUSION {
     -J $chimeric_junction \\
     --CPU $task.cpus \\
     $star_ext_args \\
-    && mv STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv ${output_basename}.STAR-1.10.1.fusion_predictions.abridged.coding_effect.tsv \\
+    && mv STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv ${task.prefix}.STAR-1.10.1.fusion_predictions.abridged.coding_effect.tsv \\
     && pigz -c $chimeric_junction > ${chimeric_junction.getName()}.gz \\
     && rm -rf ./${params.star_fusion_genome_untar_path}
     """

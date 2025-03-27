@@ -28,7 +28,6 @@ workflow {
     sample_id = Channel.value(params.sample_id) // channel: val(str)
     reference = Channel.fromPath(params.reference).first() // channel: path(FASTA)
     reference_index = Channel.fromPath(params.reference_index).first() // channel: path(FAI)
-    output_basename = Channel.value(params.output_basename) // channel: val(str)
     gtf_anno = Channel.fromPath(params.gtf_anno).first() // channel: path(GTF)
     kallisto_idx = Channel.fromPath(params.kallisto_idx).first() // channel: path(IDX)
     // STAR
@@ -58,8 +57,7 @@ workflow {
         sample_id,
         reference,
         gtf_anno,
-        kallisto_idx,
-        output_basename
+        kallisto_idx
     )
     // assign output for ease of reference
     strandedness = preprocess_reads.out.strandedness
@@ -72,7 +70,6 @@ workflow {
     align_analyze_rnaseq(
         genomeDir,
         readFilesCommand,
-        output_basename,
         preprocess_reads.out.fastq_to_align,
         FusionGenome,
         reference,
@@ -93,16 +90,13 @@ workflow {
         sample_id,
         fusion_annotator_tar,
         align_analyze_rnaseq.out.RSEM_gene,
-        align_analyze_rnaseq.out.STARFusion_results,
-        output_basename
+        align_analyze_rnaseq.out.STARFusion_results
     )
     rmats_subworkflow(
         gtf_anno,
         align_analyze_rnaseq.out.genomic_bam_out,
         read_length_median,
         is_paired_end ? "paired" : "single",
-        rmats_strand,
-        output_basename
+        rmats_strand
     )
-
 }

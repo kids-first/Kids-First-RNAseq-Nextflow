@@ -20,7 +20,6 @@ workflow align_analyze_rnaseq {
     genomeDir // channel: path(TAR.GZ)
     readFilesCommand // channel: val(str)
     // Many
-    outFileNamePrefix // channel: val(str)
     input_fastq_reads // channel: [val(rgs), path(FASTQ | [FASTQ])]
     genome_tar // channel: path(TAR.GZ)
     reference_fasta // channel: path(FASTA)
@@ -45,9 +44,9 @@ workflow align_analyze_rnaseq {
     rgs = input_fastq_reads.map { rg, _fq -> rg}.collect()
     fqs = input_fastq_reads.map { _rg, fq -> fq}.collect()
 
-    STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end, outFileNamePrefix)
-    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions, outFileNamePrefix)
-    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out, outFileNamePrefix)
+    STAR_ALIGN(genomeDir, readFilesCommand, rgs, fqs, is_paired_end)
+    STAR_FUSION(genome_tar, STAR_ALIGN.out.chimeric_junctions)
+    SAMTOOLS_SORT(STAR_ALIGN.out.genomic_bam_out)
     // Create a value conversion dict as many tools use strand as a param but call it different things
 
     wf_strand_info = [ "ARRIBA_FUSION": strandedness.map{it.startsWith("rf") ? "reverse" : (it.startsWith("fr") ? "yes" : "auto")},
@@ -55,15 +54,15 @@ workflow align_analyze_rnaseq {
         "KALLISTO": strandedness.map{it.startsWith("rf") ? "rf-stranded" : (it.startsWith("fr") ? "fr-stranded" : "")},
         "RNASEQC": strandedness.map{it.startsWith("rf") ? "rf" : (it.startsWith("fr") ? "fr" : "")}
         ]
-    KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, outFileNamePrefix, read_length_stddev, read_length_median, is_paired_end)
+    KALLISTO(kallisto_idx, wf_strand_info["KALLISTO"], fqs, read_length_stddev, read_length_median, is_paired_end)
 
     sorted_bam_bai = SAMTOOLS_SORT.out.sorted_bam.combine(SAMTOOLS_SORT.out.sorted_bai)
-    ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, outFileNamePrefix, wf_strand_info.ARRIBA_FUSION)
+    ARRIBA_FUSION(sorted_bam_bai, reference_fasta, gtf_anno, wf_strand_info.ARRIBA_FUSION)
     ARRIBA_DRAW(sorted_bam_bai, ARRIBA_FUSION.out.arriba_fusions, gtf_anno)
-    RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, outFileNamePrefix, is_paired_end, wf_strand_info.RSEM)
+    RSEM(RSEMgenome, STAR_ALIGN.out.transcriptome_bam_out, is_paired_end, wf_strand_info.RSEM)
     RNASEQC(RNAseQC_GTF, sorted_bam_bai, wf_strand_info["RNASEQC"], is_paired_end)
-    TAR_GZ(RNASEQC.out.Gene_TPM, RNASEQC.out.Gene_count, RNASEQC.out.Exon_count, outFileNamePrefix)
-    T1K(sorted_bam_bai, hla_rna_ref_seqs, hla_rna_gene_coords, outFileNamePrefix)
+    TAR_GZ(RNASEQC.out.Gene_TPM, RNASEQC.out.Gene_count, RNASEQC.out.Exon_count)
+    T1K(sorted_bam_bai, hla_rna_ref_seqs, hla_rna_gene_coords)
 
     reference_fai = reference_fasta.combine(reference_index)
     SAMTOOLS_VIEW(reference_fai, sorted_bam_bai)

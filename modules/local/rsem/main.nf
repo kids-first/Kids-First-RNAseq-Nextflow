@@ -5,7 +5,6 @@ process RSEM {
     input:
     path(rsem_genome_tar)
     path(transcriptome_bam)
-    val(outFileNamePrefix)
     val(pairedness)
     val(strandedness)
 
@@ -26,7 +25,7 @@ process RSEM {
     $rsem_ext_args \\
     $transcriptome_bam \\
     ./${rsem_genome_tar.getBaseName().replace(".tar", "")}/${rsem_genome_tar.getBaseName().replace(".tar", "")} \\
-    ${outFileNamePrefix}.rsem \\
+    ${task.prefix}.rsem \\
     && gzip *results
     """
 

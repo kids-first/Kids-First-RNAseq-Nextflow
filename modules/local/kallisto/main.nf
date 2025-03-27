@@ -6,7 +6,6 @@ process KALLISTO {
     path(transcript_idx)
     val(strand)
     path(reads)
-    val(output_basename)
     val(std_dev)
     val(avg_frag_len)
     val(is_paired_end)
@@ -26,8 +25,8 @@ process KALLISTO {
     -t 8 \\
     ${strand != "" ? "--" + strand : ""} \\
     $read_line \\
-    && mv output/abundance.tsv ${output_basename}.kallisto.abundance.tsv \\
-    && gzip ${output_basename}.kallisto.abundance.tsv
+    && mv output/abundance.tsv ${task.prefix}.kallisto.abundance.tsv \\
+    && gzip ${task.prefix}.kallisto.abundance.tsv
 
     """
 
