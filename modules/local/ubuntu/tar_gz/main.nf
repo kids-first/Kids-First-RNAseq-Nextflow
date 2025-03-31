@@ -12,16 +12,16 @@ process TAR_GZ {
 
     script:
     """
-    mkdir ${task.prefix}_RNASeQC_counts
+    mkdir ${task.ext.prefix}_RNASeQC_counts
 
     cp $Gene_TPM \\
     $Gene_count \\
     $Exon_count \\
-    ${task.prefix}_RNASeQC_counts
+    ${task.ext.prefix}_RNASeQC_counts
 
     tar -czf \\
-    ${task.prefix}.RNASeQC.counts.tar.gz \\
-    ${task.prefix}_RNASeQC_counts
+    ${task.ext.prefix}.RNASeQC.counts.tar.gz \\
+    ${task.ext.prefix}_RNASeQC_counts
 
     """
 

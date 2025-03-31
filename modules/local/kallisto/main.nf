@@ -25,8 +25,8 @@ process KALLISTO {
     -t 8 \\
     ${strand != "" ? "--" + strand : ""} \\
     $read_line \\
-    && mv output/abundance.tsv ${task.prefix}.kallisto.abundance.tsv \\
-    && gzip ${task.prefix}.kallisto.abundance.tsv
+    && mv output/abundance.tsv ${task.ext.prefix}.kallisto.abundance.tsv \\
+    && gzip ${task.ext.prefix}.kallisto.abundance.tsv
 
     """
 

@@ -16,11 +16,11 @@ process SAMTOOLS_SORT {
     --threads $task.cpus \\
     -m 1G \\
     -O bam \\
-    > ${task.prefix}.sorted.bam \\
+    > ${task.ext.prefix}.sorted.bam \\
     && samtools index \\
     -@ $task.cpus \\
-    ${task.prefix}.sorted.bam \\
-    ${task.prefix}.sorted.bai
+    ${task.ext.prefix}.sorted.bam \\
+    ${task.ext.prefix}.sorted.bai
     """
 
     stub:

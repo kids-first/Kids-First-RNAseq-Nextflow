@@ -42,7 +42,7 @@ process STAR_ALIGN {
     --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest star_reads_manifest.txt \\
-    --outFileNamePrefix "${task.prefix}." \\
+    --outFileNamePrefix "${task.ext.prefix}." \\
     --runThreadN $task.cpus \\
     $star_ext_args \\
     && pigz *tab \\

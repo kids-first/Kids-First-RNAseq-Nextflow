@@ -15,7 +15,7 @@ process CUTADAPT {
     cutadapt -j $task.cpus \\
     $args \\
     $reads \\
-    > ${task.prefix}.cutadapt_stats.txt
+    > ${task.ext.prefix}.cutadapt_stats.txt
     """
 
 

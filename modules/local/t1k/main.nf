@@ -22,7 +22,7 @@ process T1K {
     -b $bam \\
     -f $reference \\
     -c $gene_coordinates \\
-    -o $task.prefix \\
+    -o $task.ext.prefix \\
     $ext_args \\
     && sed -i '1s/^/gene_name\\tnum_diff_alleles\\tallele_1\\tabundance_1\\tquality_1\\tallele_2\\tabundance_2\\tquality_2\\tsecondary_alleles\\n/' *_genotype.tsv
     """

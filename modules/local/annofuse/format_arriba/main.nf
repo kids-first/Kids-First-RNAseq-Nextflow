@@ -12,7 +12,7 @@ process FORMAT_ARRIBA {
     """
     formatArribaFusionCalls.R \\
     --fusionfile $arriba_fusion_file \\
-    --outputfile ${task.prefix}.arriba_formatted.tsv
+    --outputfile ${task.ext.prefix}.arriba_formatted.tsv
     """
 
 }

@@ -16,7 +16,7 @@ process ANNOTATE_ARRIBA {
     && /opt/FusionAnnotator/FusionAnnotator \\
     --annotate $input_fusion_file \\
     $ext_args \\
-    > ${task.prefix}.annotated.tsv \\
+    > ${task.ext.prefix}.annotated.tsv \\
 
     """
 

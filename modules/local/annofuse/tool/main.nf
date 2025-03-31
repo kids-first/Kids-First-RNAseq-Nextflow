@@ -27,7 +27,7 @@ process ANNOFUSE {
     --fusionfileStarFusion $starfusion_formatted_fusions \\
     --expressionFile $rsem_expr_file \\
     --tumorID $sample_id \\
-    --outputfile ${task.prefix}.annoFuse_filter.tsv
+    --outputfile ${task.ext.prefix}.annoFuse_filter.tsv
 
     """
 

@@ -19,8 +19,8 @@ process ARRIBA_FUSION {
     -a $reference_fasta \\
     -g $gtf_anno \\
     -s $arriba_strand_flag \\
-    -o ${task.prefix}.arriba_2.2.1.fusions.tsv \\
-    -O ${task.prefix}.arriba_2.2.1.discarded_fusions.tsv \\
+    -o ${task.ext.prefix}.arriba_2.2.1.fusions.tsv \\
+    -O ${task.ext.prefix}.arriba_2.2.1.discarded_fusions.tsv \\
     $arriba_ext_args
     """
 

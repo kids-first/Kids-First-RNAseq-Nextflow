@@ -25,7 +25,7 @@ process RSEM {
     $rsem_ext_args \\
     $transcriptome_bam \\
     ./${rsem_genome_tar.getBaseName().replace(".tar", "")}/${rsem_genome_tar.getBaseName().replace(".tar", "")} \\
-    ${task.prefix}.rsem \\
+    ${task.ext.prefix}.rsem \\
     && gzip *results
     """
 
