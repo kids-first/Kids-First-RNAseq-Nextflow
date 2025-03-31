@@ -1,14 +1,11 @@
 {
-    "cutadapt_r1_adapter": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
-    "cutadapt_min_len": 20,
-    "input_rgs_list": ["ID:C\tSM:NA12878_TEST\tLB:Solexa-NA12878\tPL:illumina\tPU:H06JUADXX130110.1.ATCACGAT", "ID:B\tSM:NA12878_TEST\tLB:Solexa-NA12878\tPL:illumina\tPU:H06HDADXX130110.1.ATCACGAT", "ID:A\tSM:NA12878_TEST\tLB:Solexa-NA12878\tPL:illumina\tPU:H06HDADXX130110.2.ATCACGAT"],
-    "input_reads_list": ["TEST_FQ/NA12878_2.converted_1.fastq.gz", "TEST_FQ/NA12878_1.converted_1.fastq.gz", "TEST_FQ/NA12878_0.converted_1.fastq.gz"],
-    "sample_id": "NA12878_TEST",
+    "input_alignment_reads": "f9066aa6-5f30-40dd-aaec-337cc37c6c0c.Aligned.out.sorted.cram",
+    "sample_id": "BS_2QGRF15R",
     "reference": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa",
     "reference_index": "../RNASEQ_REFS/GRCh38.primary_assembly.genome.fa.fai",
     "genomeDir": "../RNASEQ_REFS/STAR_2.7.10a_GENCODE39.tar.gz",
     "FusionGenome": "../RNASEQ_REFS/GRCh38_v39_CTAT_lib_Mar242022.CUSTOM.tar.gz",
-    "output_basename": "31160a89-b89b-4f18-8901-7f0fd3205cff",
+    "output_basename": "BIG_CRAM",
     "gtf_anno": "../RNASEQ_REFS/gencode.v39.primary_assembly.annotation.gtf",
     "kallisto_idx": "../RNASEQ_REFS/RSEM_GENCODE39.transcripts.kallisto.idx",
     "RSEM_genome": "../RNASEQ_REFS/RSEM_GENCODE39.tar.gz",
@@ -16,5 +13,6 @@
     "RNAseQC_GTF": "../RNASEQ_REFS/gencode.v39.primary_assembly.rnaseqc.stranded.gtf",
     "hla_rna_ref_seqs": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_seq.fa",
     "hla_rna_gene_coords": "../RNASEQ_REFS/hla_v3.43.0_gencode_v39_rna_coord.fa",
-    "aws_test_instance": true
+    "aws_test_instance": true,
+    "readFilesCommand": "zcat"
 }

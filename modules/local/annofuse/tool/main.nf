@@ -6,8 +6,7 @@ process ANNOFUSE {
     path(arriba_formatted_fusions)
     path(starfusion_formatted_fusions)
     path(rsem_expr_file)
-    val(sample_name)
-    val(output_basename)
+    val(sample_id)
 
     output:
     path('*annoFuse_filter.tsv'), optional: true, emit: filtered_fusions_tsv
@@ -27,8 +26,8 @@ process ANNOFUSE {
     --fusionfileArriba $arriba_formatted_fusions \\
     --fusionfileStarFusion $starfusion_formatted_fusions \\
     --expressionFile $rsem_expr_file \\
-    --tumorID $sample_name \\
-    --outputfile ${output_basename}.annoFuse_filter.tsv
+    --tumorID $sample_id \\
+    --outputfile ${task.ext.prefix}.annoFuse_filter.tsv
 
     """
 

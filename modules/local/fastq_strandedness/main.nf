@@ -3,14 +3,14 @@ process FASTQ_STRANDEDNESS {
     container "pgc-images.sbgenomics.com/d3b-bixu/stranded:1.1.0"
 
     input:
-    tuple val(meta_reads), path(reads, arity: '1..2')
+    tuple val(meta_reads), path(reads)
     path(annotation_gtf)
     path(kallisto_idx)
     val(nreads)
 
     output:
     path('fastq.strandness'), emit: result
-    env('TOP_LEN'), emit: top_read_len
+    env(TOP_LEN), emit: top_read_len
 
     script:
     def reads_in = reads.size() == 2
@@ -26,7 +26,7 @@ process FASTQ_STRANDEDNESS {
     
     TOP_LEN=`samtools view $pseudo_bam \\
     | cut -f 10 \\
-    | perl -ne 'chomp;print length(\$_)."\n"' | sort | uniq -c | sort -nr -k1,1 | head -n 1`
+    | awk '{print length}' | sort | uniq -c | sort -nr -k1,1 | head -n 1`
 
     """
 

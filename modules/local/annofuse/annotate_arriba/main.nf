@@ -5,7 +5,6 @@ process ANNOTATE_ARRIBA {
     input:
     path(input_fusion_file)
     path(fusion_annotator_tar)
-    val(output_basename)
 
     output:
     path('*annotated.tsv'), emit: annotated_tsv
@@ -17,7 +16,7 @@ process ANNOTATE_ARRIBA {
     && /opt/FusionAnnotator/FusionAnnotator \\
     --annotate $input_fusion_file \\
     $ext_args \\
-    > ${output_basename}.annotated.tsv \\
+    > ${task.ext.prefix}.annotated.tsv \\
 
     """
 

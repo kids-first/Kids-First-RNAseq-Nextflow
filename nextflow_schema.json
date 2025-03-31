@@ -1,0 +1,390 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com//Users/brownm28/Documents/git_repos/Kids-First-RNAseq-Nextflow/master/nextflow_schema.json",
+    "title": "/Users/brownm28/Documents/git_repos/Kids-First-RNAseq-Nextflow pipeline parameters",
+    "description": "",
+    "type": "object",
+    "definitions": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "properties": {
+                "outdir": {
+                    "type": "string",
+                    "description": "Path to the output directory where the results will be saved.",
+                    "default": "./results",
+                    "fa_icon": "fas fa-folder-open"
+                }
+            }
+        },
+        "reference_genome_options": {
+            "title": "Reference genome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference genome related files and options required for the workflow.",
+            "properties": {}
+        },
+        "institutional_config_options": {
+            "title": "Institutional config options",
+            "type": "object",
+            "fa_icon": "fas fa-university",
+            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "properties": {}
+        },
+        "max_job_request_options": {
+            "title": "Max job request options",
+            "type": "object",
+            "fa_icon": "fab fa-acquisitions-incorporated",
+            "description": "Set the top limit for requested resources for any single job.",
+            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
+            "properties": {
+                "max_cpus": {
+                    "type": "integer",
+                    "description": "Maximum number of CPUs that can be requested for any single job.",
+                    "default": 16,
+                    "fa_icon": "fas fa-microchip",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
+                },
+                "max_memory": {
+                    "type": "string",
+                    "description": "Maximum amount of memory that can be requested for any single job.",
+                    "default": "128.GB",
+                    "fa_icon": "fas fa-memory",
+                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
+                },
+                "max_time": {
+                    "type": "string",
+                    "description": "Maximum amount of time that can be requested for any single job.",
+                    "default": "240.h",
+                    "fa_icon": "far fa-clock",
+                    "pattern": "^(\\d+\\.?\\s*(s|m|h|day)\\s*)+$",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {}
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/reference_genome_options"
+        },
+        {
+            "$ref": "#/definitions/institutional_config_options"
+        },
+        {
+            "$ref": "#/definitions/max_job_request_options"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
+        }
+    ],
+    "properties": {
+        "sample_id": {
+            "type": "string"
+        },
+        "output_basename": {
+            "type": "string"
+        },
+        "input_reads_list": {
+            "type": "string"
+        },
+        "input_mates_list": {
+            "type": "string"
+        },
+        "input_rgs_list": {
+            "type": "string"
+        },
+        "is_paired_end": {
+            "type": "string"
+        },
+        "read_length_median": {
+            "type": "string"
+        },
+        "read_length_stddev": {
+            "type": "string"
+        },
+        "strandedness": {
+            "type": "string"
+        },
+        "input_alignment_reads": {
+            "type": "string"
+        },
+        "max_reads": {
+            "type": "integer",
+            "default": 200000
+        },
+        "line_filter": {
+            "type": "string",
+            "default": "^@RG"
+        },
+        "cutadapt_r1_adapter": {
+            "type": "string"
+        },
+        "cutadapt_r2_adapter": {
+            "type": "string"
+        },
+        "cutadapt_min_len": {
+            "type": "string"
+        },
+        "cutadapt_quality_base": {
+            "type": "string"
+        },
+        "cutadapt_quality_cutoff": {
+            "type": "string"
+        },
+        "reference": {
+            "type": "string"
+        },
+        "reference_index": {
+            "type": "string"
+        },
+        "gtf_anno": {
+            "type": "string"
+        },
+        "kallisto_idx": {
+            "type": "string"
+        },
+        "ram": {
+            "type": "string"
+        },
+        "genomeDir": {
+            "type": "string"
+        },
+        "readFilesCommand": {
+            "type": "string",
+            "default": "zcat"
+        },
+        "alignInsertionFlush": {
+            "type": "string",
+            "default": "None"
+        },
+        "alignIntronMax": {
+            "type": "integer",
+            "default": 1000000
+        },
+        "alignMatesGapMax": {
+            "type": "integer",
+            "default": 1000000
+        },
+        "alignSJDBoverhangMin": {
+            "type": "integer",
+            "default": 1
+        },
+        "alignSJoverhangMin": {
+            "type": "integer",
+            "default": 8
+        },
+        "alignSJstitchMismatchNmax": {
+            "type": "string",
+            "default": "5 -1 5 5"
+        },
+        "alignSoftClipAtReferenceEnds": {
+            "type": "string",
+            "default": "Yes"
+        },
+        "alignSplicedMateMapLmin": {
+            "type": "integer",
+            "default": 0
+        },
+        "alignSplicedMateMapLminOverLmate": {
+            "type": "number",
+            "default": 0.5
+        },
+        "chimJunctionOverhangMin": {
+            "type": "integer",
+            "default": 10
+        },
+        "chimMainSegmentMultNmax": {
+            "type": "integer",
+            "default": 1
+        },
+        "chimMultimapNmax": {
+            "type": "integer",
+            "default": 50
+        },
+        "chimMultimapScoreRange": {
+            "type": "integer",
+            "default": 1
+        },
+        "chimNonchimScoreDropMin": {
+            "type": "integer",
+            "default": 20
+        },
+        "chimOutJunctionFormat": {
+            "type": "integer",
+            "default": 1
+        },
+        "chimOutType": {
+            "type": "string",
+            "default": "Junctions WithinBAM SoftClip"
+        },
+        "chimScoreDropMax": {
+            "type": "integer",
+            "default": 30
+        },
+        "chimScoreJunctionNonGTAG": {
+            "type": "integer",
+            "default": -1
+        },
+        "chimScoreSeparation": {
+            "type": "integer",
+            "default": 1
+        },
+        "chimSegmentMin": {
+            "type": "integer",
+            "default": 10
+        },
+        "chimSegmentReadGapMax": {
+            "type": "integer",
+            "default": 3
+        },
+        "genomeLoad": {
+            "type": "string",
+            "default": "NoSharedMemory"
+        },
+        "limitSjdbInsertNsj": {
+            "type": "integer",
+            "default": 1200000
+        },
+        "outFilterIntronMotifs": {
+            "type": "string",
+            "default": "None"
+        },
+        "outFilterMatchNminOverLread": {
+            "type": "number",
+            "default": 0.33
+        },
+        "outFilterMismatchNmax": {
+            "type": "integer",
+            "default": 999
+        },
+        "outFilterMismatchNoverLmax": {
+            "type": "number",
+            "default": 0.1
+        },
+        "outFilterMultimapNmax": {
+            "type": "integer",
+            "default": 50
+        },
+        "outFilterScoreMinOverLread": {
+            "type": "number",
+            "default": 0.33
+        },
+        "outFilterType": {
+            "type": "string",
+            "default": "BySJout"
+        },
+        "outReadsUnmapped": {
+            "type": "string",
+            "default": "None"
+        },
+        "outSAMattributes": {
+            "type": "string",
+            "default": "NH HI AS nM NM ch"
+        },
+        "outSAMstrandField": {
+            "type": "string",
+            "default": "intronMotif"
+        },
+        "outSAMtype": {
+            "type": "string",
+            "default": "BAM Unsorted"
+        },
+        "outSAMunmapped": {
+            "type": "string",
+            "default": "Within"
+        },
+        "peOverlapMMp": {
+            "type": "number",
+            "default": 0.01
+        },
+        "peOverlapNbasesMin": {
+            "type": "integer",
+            "default": 10
+        },
+        "quantMode": {
+            "type": "string",
+            "default": "TranscriptomeSAM GeneCounts"
+        },
+        "twopassMode": {
+            "type": "string",
+            "default": "Basic"
+        },
+        "examine_coding_effect": {
+            "type": "string",
+            "default": "true"
+        },
+        "FusionGenome": {
+            "type": "string"
+        },
+        "star_fusion_genome_untar_path": {
+            "type": "string",
+            "default": "GRCh38_v39_CTAT_lib_Mar242022.CUSTOM/"
+        },
+        "RSEMgenome": {
+            "type": "string"
+        },
+        "fragment_length_max": {
+            "type": "integer",
+            "default": 1000
+        },
+        "append_names": {
+            "type": "string",
+            "default": "true"
+        },
+        "estimate_rspd": {
+            "type": "string",
+            "default": "true"
+        },
+        "assembly": {
+            "type": "string",
+            "default": "hg38_GRCh38"
+        },
+        "annofuse_col_num": {
+            "type": "integer",
+            "default": 30
+        },
+        "rmats_variable_read_length": {
+            "type": "string",
+            "default": "true"
+        },
+        "t1k_abnormal_unmap_flag": {
+            "type": "string",
+            "default": "true"
+        },
+        "t1k_preset": {
+            "type": "string",
+            "default": "hla"
+        },
+        "t1k_skip_post_analysis": {
+            "type": "string",
+            "default": "true"
+        },
+        "hla_rna_ref_seqs": {
+            "type": "string"
+        },
+        "hla_rna_gene_coords": {
+            "type": "string"
+        },
+        "aws_test_instance": {
+            "type": "string"
+        }
+    }
+}

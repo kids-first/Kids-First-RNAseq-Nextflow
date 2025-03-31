@@ -4,7 +4,6 @@ process FORMAT_ARRIBA {
 
     input:
     path(arriba_fusion_file)
-    val(output_basename)
 
     output:
     path('*arriba_formatted.tsv'), emit: formatted_fusion_tsv
@@ -13,7 +12,7 @@ process FORMAT_ARRIBA {
     """
     formatArribaFusionCalls.R \\
     --fusionfile $arriba_fusion_file \\
-    --outputfile ${output_basename}.arriba_formatted.tsv
+    --outputfile ${task.ext.prefix}.arriba_formatted.tsv
     """
 
 }

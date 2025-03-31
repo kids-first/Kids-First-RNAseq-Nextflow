@@ -8,7 +8,6 @@ process STAR_ALIGN {
     val(read_groups)
     path(fastq_reads)
     val(pe_flag)
-    val(outFileNamePrefix)
 
     output:
     path('*Log.progress.out'), emit: log_progress_out
@@ -43,10 +42,11 @@ process STAR_ALIGN {
     --genomeDir ./${genomeDir.getBaseName().replace(".tar", "")} \\
     --readFilesCommand $readFilesCommand \\
     --readFilesManifest star_reads_manifest.txt \\
-    --outFileNamePrefix "${outFileNamePrefix}." \\
+    --outFileNamePrefix "${task.ext.prefix}." \\
     --runThreadN $task.cpus \\
     $star_ext_args \\
-    && pigz *tab
+    && pigz *tab \\
+    && rm -rf ./${genomeDir.getBaseName().replace(".tar", "")}
     """
 
 }

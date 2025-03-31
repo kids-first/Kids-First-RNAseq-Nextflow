@@ -1,5 +1,5 @@
 process ALIGNMENT_PAIREDNESS {
-    label 'C8'
+    label 'C4'
     container "quay.io/biocontainers/pysam:0.22.0--py310h41dec4a_0"
 
     input:
@@ -8,7 +8,7 @@ process ALIGNMENT_PAIREDNESS {
     val max_reads
 
     output:
-    env('RESULT'), emit: result
+    env(RESULT), emit: result
 
     script:
     """

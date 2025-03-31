@@ -6,7 +6,7 @@ process SAMTOOLS_HEAD_RG_CT {
     tuple val(meta), path(input_align)
 
     output:
-    tuple val(meta), env('RG_NUM'), path(input_align), emit: reads
+    tuple val(meta), env(RG_NUM), path(input_align), emit: reads
 
     script:
     """

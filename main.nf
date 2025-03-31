@@ -5,18 +5,29 @@ include { align_analyze_rnaseq } from './subworkflows/local/align_analyze_rnaseq
 include { annofuse_subworkflow } from './subworkflows/local/annofuse_subworkflow/main'
 include { rmats_subworkflow } from './subworkflows/local/rmats_subworkflow/main'
 
+
+def build_inputs_fastqs(rgs, reads, mates){
+    def result = Channel.empty()
+    if (params.input_mates_list && params.input_reads_list){
+        result = rgs.merge(reads, mates).map { rg, read, mate -> [rg, [read, mate]] }
+    } else if(params.input_reads_list){
+        result = rgs.merge(reads).map { rg, read -> [rg, read] }
+    }
+    return result
+}
+
+
 workflow {
     main:
     input_alignment_reads = params.input_alignment_reads ? Channel.fromPath(params.input_alignment_reads) : Channel.value([]) // channel: [path(bam/cram)]
-    input_fastq_reads = params.input_fastq_reads ? Channel.fromList(params.input_fastq_reads).map{ meta, f -> [meta, f instanceof List ? f.collect{ file(it,checkIfExists: true) } : file(f, checkIfExists: true)] } : Channel.empty() // channel: [val(rgs), path(fastq | [fastq])], Optional unless no input_alignment_reads
-    read_length_median = params.read_length_median ? Channel.value(params.read_length_median) : Channel.value([]) // channel: val(int), optional
-    read_length_stddev = params.read_length_stddev ? Channel.value(params.read_length_stddev) : Channel.value([]) // channel: val(int), optional
+    input_rgs = params.input_rgs_list ? Channel.fromList(params.input_rgs_list) : Channel.value([])
+    input_reads = params.input_reads_list ? Channel.fromPath(params.input_reads_list) : Channel.value([])
+    input_mates = params.input_mates_list ? Channel.fromPath(params.input_mates_list) : Channel.value([])
     max_reads = Channel.value(params.max_reads) // channel: val(int)
     line_filter = Channel.value(params.line_filter) // channel: val(str)
     sample_id = Channel.value(params.sample_id) // channel: val(str)
     reference = Channel.fromPath(params.reference).first() // channel: path(FASTA)
     reference_index = Channel.fromPath(params.reference_index).first() // channel: path(FAI)
-    output_basename = Channel.value(params.output_basename) // channel: val(str)
     gtf_anno = Channel.fromPath(params.gtf_anno).first() // channel: path(GTF)
     kallisto_idx = Channel.fromPath(params.kallisto_idx).first() // channel: path(IDX)
     // STAR
@@ -34,7 +45,20 @@ workflow {
     hla_rna_ref_seqs = Channel.fromPath(params.hla_rna_ref_seqs) // channel: path(FASTA)
     hla_rna_gene_coords = Channel.fromPath(params.hla_rna_gene_coords) // channel: path(FASTA)
 
-    preprocess_reads(input_alignment_reads, input_fastq_reads, line_filter, read_length_median, read_length_stddev, max_reads, sample_id, reference, gtf_anno, kallisto_idx)
+
+    // Format reads and RGS for preprocess step
+    input_fastq_reads = build_inputs_fastqs(input_rgs, input_reads, input_mates)
+    input_fastq_reads.view()
+    preprocess_reads(
+        input_alignment_reads,
+        input_fastq_reads,
+        line_filter,
+        max_reads,
+        sample_id,
+        reference,
+        gtf_anno,
+        kallisto_idx
+    )
     // assign output for ease of reference
     strandedness = preprocess_reads.out.strandedness
     is_paired_end = preprocess_reads.out.is_paired_end
@@ -46,7 +70,6 @@ workflow {
     align_analyze_rnaseq(
         genomeDir,
         readFilesCommand,
-        output_basename,
         preprocess_reads.out.fastq_to_align,
         FusionGenome,
         reference,
@@ -54,7 +77,6 @@ workflow {
         gtf_anno,
         RSEM_genome,
         kallisto_idx,
-        sample_id,
         RNAseQC_GTF,
         hla_rna_ref_seqs,
         hla_rna_gene_coords,
@@ -68,16 +90,13 @@ workflow {
         sample_id,
         fusion_annotator_tar,
         align_analyze_rnaseq.out.RSEM_gene,
-        align_analyze_rnaseq.out.STARFusion_results,
-        output_basename
+        align_analyze_rnaseq.out.STARFusion_results
     )
     rmats_subworkflow(
         gtf_anno,
         align_analyze_rnaseq.out.genomic_bam_out,
         read_length_median,
         is_paired_end ? "paired" : "single",
-        rmats_strand,
-        output_basename
+        rmats_strand
     )
-
 }
