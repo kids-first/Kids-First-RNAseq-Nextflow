@@ -1,6 +1,6 @@
 process RNASEQC {
     label 'C4'
-    container 'gcr.io/broad-cga-aarong-gtex/rnaseqc:2.4.2'
+    container 'pgc-images.sbgenomics.com/d3b-bixu/rnaseqc:v2.4.2'
 
     input:
     path(collapsed_gtf)
