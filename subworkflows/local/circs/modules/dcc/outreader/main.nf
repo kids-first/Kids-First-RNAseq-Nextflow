@@ -6,8 +6,7 @@ process DCC_OUTREADER {
     tuple val(meta), path(annotated_counts), path(cleaned_coordinates)
 
     output:
-    path('CircRNACount_clean'), emit: counts 
-    path('CircCoordinates_clean'), emit: coordinates
+    path('*.dcc.tsv'), emit: processed_circs
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
