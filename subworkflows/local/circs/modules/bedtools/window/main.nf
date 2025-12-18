@@ -1,12 +1,13 @@
 process BEDTOOLS_WINDOW {
     label 'process_single'
-    container "biocontainers/bedtools:v2.26.0dfsg-3-deb_cv1"
+    container "staphb/bedtools:2.31.1"
 
     input:
-    tuple val(meta), path(intervals1), path(intervals2)
+    tuple val(meta), path(intervals1)
+    path(intervals2)
 
     output:
-    path('*.bed'), emit: windows
+    tuple val(meta), path('*.bed'), emit: windows
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

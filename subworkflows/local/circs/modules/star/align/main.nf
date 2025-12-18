@@ -7,16 +7,16 @@ process STAR_ALIGN {
     path(genomeDir)
 
     output:
-    path('*Log.progress.out'), emit: log_progress_out
-    path('*Log.out'), emit: log_out
-    path('*Log.final.out'), emit: log_final_out
-    path('*Aligned.out.bam'), optional:true, emit: genomic_bam_out
-    path('*Aligned.out.sam'), optional:true, emit: genomic_sam_out
-    path('*SJ.out.tab.gz'), emit: junctions_out
-    path('*Aligned.toTranscriptome.out.bam'), optional:true, emit: transcriptome_bam_out
-    path('*Chimeric.out.sam'), optional: true, emit: chimeric_sam_out
-    path('*Chimeric.out.junction'), emit: chimeric_junctions
-    path('*ReadsPerGene.out.tab.gz'), optional:true, emit: gene_counts
+    tuple val(meta), path('*Log.progress.out'), emit: log_progress_out
+    tuple val(meta), path('*Log.out'), emit: log_out
+    tuple val(meta), path('*Log.final.out'), emit: log_final_out
+    tuple val(meta), path('*Aligned.out.bam'), optional:true, emit: genomic_bam_out
+    tuple val(meta), path('*Aligned.out.sam'), optional:true, emit: genomic_sam_out
+    tuple val(meta), path('*SJ.out.tab.gz'), emit: junctions_out
+    tuple val(meta), path('*Aligned.toTranscriptome.out.bam'), optional:true, emit: transcriptome_bam_out
+    tuple val(meta), path('*Chimeric.out.sam'), optional: true, emit: chimeric_sam_out
+    tuple val(meta), path('*Chimeric.out.junction'), emit: chimeric_junctions
+    tuple val(meta), path('*ReadsPerGene.out.tab.gz'), optional:true, emit: gene_counts
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
