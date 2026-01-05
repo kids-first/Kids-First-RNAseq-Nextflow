@@ -1,6 +1,6 @@
 process CIRCEXPLORER_OUTREADER {
     label 'process_single'
-    container "pgc-images.sbgenomics.com/danmiller/circs-cx:0.1.0"
+    container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
 
     input:
     tuple val(meta), path(circs)
@@ -10,7 +10,7 @@ process CIRCEXPLORER_OUTREADER {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def sample_name = $meta.sample_name ?: "${meta.id}"
+    def sample_name = meta.sample_name ?: "${meta.id}"
     """
     perl /opt/circs_snake/scripts/circexplorer1_out_reader.pl \\
     $circs \\
