@@ -4,9 +4,13 @@ include { SAMTOOLS_FASTQ } from './modules/samtools/fastq/main'
 include { STAR_ALIGN as STAR_ALIGN_DCC_PAIR } from './modules/star/align/main'
 include { STAR_ALIGN as STAR_ALIGN_DCC_R1 } from './modules/star/align/main'
 include { STAR_ALIGN as STAR_ALIGN_DCC_R2 } from './modules/star/align/main'
+include { STAR_ALIGN as STAR_ALIGN_CX } from './modules/star/align/main'
 include { DCC_MAIN } from './modules/dcc/main/main'
 include { DCC_OUTREADER } from './modules/dcc/outreader/main'
 include { BEDTOOLS_WINDOW } from './modules/bedtools/window/main'
+include { CIRCEXPLORER_STARPARSE } from './modules/circexplorer/starparse/main'
+include { CIRCEXPLORER_MAIN } from './modules/circexplorer/main/main'
+include { CIRCEXPLORER_OUTREADER } from './modules/circexplorer/outreader/main'
 
 workflow {
     input_aligned_reads = Channel.fromPath(params.aligned_reads).map{ [["id": it.baseName, "is_paired_end": params.is_paired_end.toBoolean()], it] }
@@ -15,6 +19,7 @@ workflow {
     reference = Channel.fromPath(params.reference).first()
     refseq_gtf = Channel.fromPath(params.refseq_gtf).first()
     refseq_bed = Channel.fromPath(params.refseq_bed).first()
+    refseq_annot = Channel.fromPath(params.refseq_annot).first()
     
     SAMTOOLS_FASTQ(input_aligned_reads, cram_reference)
 
@@ -45,6 +50,16 @@ workflow {
 
     if (params.run_cx) {
         println "Running CX"
+        cx_fq_channel = SAMTOOLS_FASTQ.out.fastq.map { meta, files -> [meta + ["id": meta.id + "_cx"], files] }
+
+        STAR_ALIGN_CX(cx_fq_channel, star_genome)
+        chimeric_junc_channel = STAR_ALIGN_CX.out.chimeric_junctions.map { _, file -> [["id": "test"], file] }
+
+        CIRCEXPLORER_STARPARSE(chimeric_junc_channel)
+
+        CIRCEXPLORER_MAIN(CIRCEXPLORER_STARPARSE.out.fusion_junctions, reference, refseq_annot)
+        CIRCEXPLORER_MAIN.out.circs.view()
+        CIRCEXPLORER_OUTREADER(CIRCEXPLORER_MAIN.out.circs)
     }
     if (params.run_fc) {
         println "Running FC"
