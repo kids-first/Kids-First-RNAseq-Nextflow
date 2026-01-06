@@ -1,16 +1,11 @@
 process BOWTIE2_ALIGN {
-    tag "$meta.id"
-    label 'process_high'
-
-    conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/b4/b41b403e81883126c3227fc45840015538e8e2212f13abc9ae84e4b98891d51c/data' :
-        'community.wave.seqera.io/library/bowtie2_htslib_samtools_pigz:edeb13799090a2a6' }"
+    label 'process_medium'
+    container "community.wave.seqera.io/library/bowtie2_htslib_samtools_pigz:edeb13799090a2a6"
 
     input:
     tuple val(meta) , path(reads)
-    tuple val(meta2), path(index)
-    tuple val(meta3), path(fasta)
+    path(index_tar)
+    path(fasta)
     val   save_unaligned
     val   sort_bam
 
@@ -23,9 +18,6 @@ process BOWTIE2_ALIGN {
     tuple val(meta), path("*.log")      , emit: log
     tuple val(meta), path("*fastq.gz")  , emit: fastq   , optional:true
     path  "versions.yml"                , emit: versions
-
-    when:
-    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
@@ -50,6 +42,8 @@ process BOWTIE2_ALIGN {
     if (!fasta && extension=="cram") error "Fasta reference is required for CRAM output"
 
     """
+    tar --use-compress-program=pigz -xvf $index_tar
+
     INDEX=`find -L ./ -name "*.rev.1.bt2" | sed "s/\\.rev.1.bt2\$//"`
     [ -z "\$INDEX" ] && INDEX=`find -L ./ -name "*.rev.1.bt2l" | sed "s/\\.rev.1.bt2l\$//"`
     [ -z "\$INDEX" ] && echo "Bowtie2 index files not found" 1>&2 && exit 1
