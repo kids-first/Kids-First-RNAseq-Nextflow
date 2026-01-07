@@ -21,16 +21,16 @@ include { FINDCIRC_FILTER } from './modules/findcirc/filter/main'
 include { FINDCIRC_OUTREADER } from './modules/findcirc/outreader/main'
 
 workflow {
-    input_aligned_reads = Channel.fromPath(params.aligned_reads).map{ [["id": it.baseName, "is_paired_end": params.is_paired_end.toBoolean()], it] }
-    cram_reference = Channel.fromPath(params.cram_reference).first()
-    star_genome = Channel.fromPath(params.star_genome).first()
-    reference = Channel.fromPath(params.reference).first()
-    reference_index = Channel.fromPath(params.reference_index).first()
-    refseq_gtf = Channel.fromPath(params.refseq_gtf).first()
-    refseq_bed = Channel.fromPath(params.refseq_bed).first()
-    refseq_annot = Channel.fromPath(params.refseq_annot).first()
-    bowtie_index = Channel.fromPath(params.bowtie_index).first()
-    
+    input_aligned_reads = channel.fromPath(params.aligned_reads).map{ [["id": it.baseName, "is_paired_end": params.is_paired_end.toBoolean()], it] }
+    cram_reference = channel.fromPath(params.cram_reference).first()
+    star_genome = channel.fromPath(params.star_genome).first()
+    reference = channel.fromPath(params.reference).first()
+    reference_index = channel.fromPath(params.reference_index).first()
+    refseq_gtf = channel.fromPath(params.refseq_gtf).first()
+    refseq_bed = channel.fromPath(params.refseq_bed).first()
+    refseq_annot = channel.fromPath(params.refseq_annot).first()
+    bowtie_index = channel.fromPath(params.bowtie_index).first()
+
     SAMTOOLS_FASTQ(input_aligned_reads, cram_reference)
 
     if (params.run_dcc) {
@@ -73,13 +73,13 @@ workflow {
     if (params.run_fc) {
         println "Running FC"
         fc_fq_channel = SAMTOOLS_FASTQ.out.fastq.map { meta, files -> [meta + ["id": meta.id + "_fc"], files] }
-        BOWTIE2_ALIGN_PRIMARY(fc_fq_channel, bowtie_index, cram_reference, Channel.value(false), Channel.value(true)) 
+        BOWTIE2_ALIGN_PRIMARY(fc_fq_channel, bowtie_index, cram_reference, channel.value(false), channel.value(true))
         primary_alignment_channel = BOWTIE2_ALIGN_PRIMARY.out.bam.join(BOWTIE2_ALIGN_PRIMARY.out.csi).map{ meta, file, index -> [meta + ["id": meta.id + "_unmapped"], file, index] }
         primary_alignment_channel.view()
-        SAMTOOLS_VIEW(primary_alignment_channel, Channel.value([[],[]]), Channel.value([]), Channel.value([])) 
+        SAMTOOLS_VIEW(primary_alignment_channel, channel.value([[],[]]), channel.value([]), channel.value([]))
         FINDCIRC_ANCHORS(SAMTOOLS_VIEW.out.bam)
         SAMTOOLS_SPLITFASTA(reference.merge(reference_index))
-        FINDCIRC_MAIN(FINDCIRC_ANCHORS.out.anchors.map{ meta, file -> [meta + ["single_end": true], file]}, bowtie_index, SAMTOOLS_SPLITFASTA.out.split_fasta, Channel.value(false))
+        FINDCIRC_MAIN(FINDCIRC_ANCHORS.out.anchors.map{ meta, file -> [meta + ["single_end": true], file]}, bowtie_index, SAMTOOLS_SPLITFASTA.out.split_fasta, channel.value(false))
         FINDCIRC_MAIN.out.bed_ci.view()
         FINDCIRC_FILTER(FINDCIRC_MAIN.out.bed_ci)
         BEDTOOLS_WINDOW_FC(FINDCIRC_FILTER.out.candidates, refseq_bed)
