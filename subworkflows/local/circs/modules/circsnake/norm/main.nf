@@ -1,6 +1,6 @@
 process CIRCSNAKE_NORM {
     label 'process_single'
-    container "pgc-images.sbgenomics.com/danmiller/circs-snake:0.1.0"
+    container "pgc-images.sbgenomics.com/danmiller/circs-parent:0.1.0"
 
     input:
     tuple val(meta), path(voted_circs), path(reads_per_sample)
@@ -11,7 +11,7 @@ process CIRCSNAKE_NORM {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    Rscript /opt/circsnake/scripts/norm_a_voted_circs_df.R \\
+    norm_a_voted_circs_df.R \\
     $voted_circs \\
     $reads_per_sample \\
     ${prefix}.normed_voted.csv
