@@ -6,7 +6,7 @@ process CIRCEXPLORER_OUTREADER {
     tuple val(meta), path(circs)
 
     output:
-    path('*cx.tsv'), emit: processed_circs
+    tuple val(meta), path('*cx.tsv'), emit: processed_circs
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

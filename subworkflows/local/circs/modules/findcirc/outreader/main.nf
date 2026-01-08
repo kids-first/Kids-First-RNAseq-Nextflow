@@ -6,7 +6,7 @@ process FINDCIRC_OUTREADER {
     tuple val(meta), path(annotated_circs)
 
     output:
-    path('*.findcirc.tsv'), emit: processed_circs
+    tuple val(meta), path('*.findcirc.tsv'), emit: processed_circs
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
