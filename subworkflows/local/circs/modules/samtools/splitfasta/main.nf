@@ -1,5 +1,5 @@
 process SAMTOOLS_SPLITFASTA {
-    label 'process_medium'
+    label 'C8'
     container "pgc-images.sbgenomics.com/danmiller/samtools_parallel:1.20"
 
     input:

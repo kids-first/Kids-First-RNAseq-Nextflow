@@ -1,5 +1,5 @@
 process FINDCIRC_MAIN {
-    label 'process_medium'
+    label 'M16'
     container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
 
     input:

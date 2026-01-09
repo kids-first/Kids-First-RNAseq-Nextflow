@@ -7,7 +7,7 @@ include { STAR_ALIGN as STAR_ALIGN_DCC_R2 } from './modules/star/align/main'
 include { STAR_ALIGN as STAR_ALIGN_CX } from './modules/star/align/main'
 include { DCC_MAIN } from './modules/dcc/main/main'
 include { DCC_OUTREADER } from './modules/dcc/outreader/main'
-include { BEDTOOLS_WINDOW } from './modules/bedtools/window/main'
+include { BEDTOOLS_WINDOW as BEDTOOLS_WINDOW_DCC } from './modules/bedtools/window/main'
 include { BEDTOOLS_WINDOW as BEDTOOLS_WINDOW_FC } from './modules/bedtools/window/main'
 include { CIRCEXPLORER_STARPARSE } from './modules/circexplorer/starparse/main'
 include { CIRCEXPLORER_MAIN } from './modules/circexplorer/main/main'
@@ -71,10 +71,10 @@ workflow {
         dcc_main_ch = a.join(b).join(c).join(tabs)
 
         DCC_MAIN(dcc_main_ch, reference, refseq_gtf)
-        BEDTOOLS_WINDOW(DCC_MAIN.out.counts, refseq_bed)
-        outreader_ch = BEDTOOLS_WINDOW.out.windows.join(DCC_MAIN.out.coordinates)
+        BEDTOOLS_WINDOW_DCC(DCC_MAIN.out.counts, refseq_bed)
+        outreader_ch = BEDTOOLS_WINDOW_DCC.out.windows.join(DCC_MAIN.out.coordinates)
         DCC_OUTREADER(outreader_ch)
-        matrixmaker_dcc_channel = DCC_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":"all"], files] }
+        matrixmaker_dcc_channel = DCC_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":params.output_basename], files] }
         CIRCSNAKE_MATRIXMAKER_DCC(matrixmaker_dcc_channel, mm1_circ, mm1_refseq)
         CIRCSNAKE_MATRIXTWO_DCC(CIRCSNAKE_MATRIXMAKER_DCC.out.matrix, micrornas, coding_circs, hallmarks, ensembl_gene_descriptions)
     }
@@ -89,7 +89,7 @@ workflow {
 
         CIRCEXPLORER_MAIN(CIRCEXPLORER_STARPARSE.out.fusion_junctions, reference, refseq_annot)
         CIRCEXPLORER_OUTREADER(CIRCEXPLORER_MAIN.out.circs)
-        matrixmaker_cx_channel = CIRCEXPLORER_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":"all"], files] }
+        matrixmaker_cx_channel = CIRCEXPLORER_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":params.output_basename], files] }
         CIRCSNAKE_MATRIXMAKER_CX(matrixmaker_cx_channel, mm1_circ, mm1_refseq)
         CIRCSNAKE_MATRIXTWO_CX(CIRCSNAKE_MATRIXMAKER_CX.out.matrix, micrornas, coding_circs, hallmarks, ensembl_gene_descriptions)
     }
@@ -106,7 +106,7 @@ workflow {
         FINDCIRC_FILTER(FINDCIRC_MAIN.out.bed_ci.map { meta, file -> [meta.subMap('id'), file]})
         BEDTOOLS_WINDOW_FC(FINDCIRC_FILTER.out.candidates, refseq_bed)
         FINDCIRC_OUTREADER(BEDTOOLS_WINDOW_FC.out.windows)
-        matrixmaker_fc_channel = FINDCIRC_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":"all"], files] }
+        matrixmaker_fc_channel = FINDCIRC_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":params.output_basename], files] }
         CIRCSNAKE_MATRIXMAKER_FC(matrixmaker_fc_channel, mm1_circ, mm1_refseq)
         CIRCSNAKE_MATRIXTWO_FC(CIRCSNAKE_MATRIXMAKER_FC.out.matrix, micrornas, coding_circs, hallmarks, ensembl_gene_descriptions)
     }

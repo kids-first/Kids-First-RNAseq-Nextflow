@@ -1,0 +1,113 @@
+app_content:
+    entrypoint: main.nf
+class: nextflow
+cwlVersion: None
+hints:
+-   class: sbg:NextflowExecutionMode
+    value: multi-instance
+-   class: sbg:maxNumberOfParallelInstances
+    value: 3
+arguments:
+-   position: 0
+    shellQuote: false
+    valueFrom: >
+        --outdir results --run_dcc True --run_fc True --run_cx True --is_paried_end True --sbg_run True --max_cpus 48 --max_memory 384.GB --max_time 4.h
+inputs:
+-   id: aligned_reads
+    inputBinding:
+        prefix: --aligned_reads
+    type:
+    -   items: File
+        type: array
+-   id: cram_reference
+    inputBinding:
+        prefix: --cram_reference
+    type:
+    - 'null'
+    - File
+-   id: reference
+    inputBinding:
+        prefix: --reference
+    type:
+    - File
+-   id: reference_index
+    inputBinding:
+        prefix: --reference_index
+    type:
+    - File
+-   id: star_genome
+    inputBinding:
+        prefix: --star_genome
+    type:
+    - File
+-   id: refseq_bed
+    inputBinding:
+        prefix: --refseq_bed
+    type:
+    - File
+-   id: refseq_gtf
+    inputBinding:
+        prefix: --refseq_gtf
+    type:
+    - File
+-   id: refseq_annot
+    inputBinding:
+        prefix: --refseq_annot
+    type:
+    - File
+-   id: bowtie_index
+    inputBinding:
+        prefix: --bowtie_index
+    type:
+    - File
+-   id: mm1_refseq
+    inputBinding:
+        prefix: --mm1_refseq
+    type:
+    - File
+-   id: mm1_circ
+    inputBinding:
+        prefix: --mm1_circ
+    type:
+    - File
+-   id: micrornas
+    inputBinding:
+        prefix: --micrornas
+    type:
+    - File
+-   id: coding_circs
+    inputBinding:
+        prefix: --coding_circs
+    type:
+    - File
+-   id: hallmarks
+    inputBinding:
+        prefix: --hallmarks
+    type:
+    - File
+-   id: ensembl_gene_descriptions
+    inputBinding:
+        prefix: --ensembl_gene_descriptions
+    type:
+    - File
+-   id: output_basename
+    inputBinding:
+        prefix: --output_basename
+    sbg:toolDefaultValue: all
+    type:
+    - 'null'
+    - string
+outputs:
+-   doc: This is a template output. You can modify the glob pattern to make outputs
+        more specific.
+    id: nf_publishdir
+    label: Publish Directory
+    outputBinding:
+        glob: 'results/*'
+    type:
+    - 'null'
+    -   items: File
+        type: array
+requirements:
+-   class: InlineJavascriptRequirement
+-   class: ShellCommandRequirement
