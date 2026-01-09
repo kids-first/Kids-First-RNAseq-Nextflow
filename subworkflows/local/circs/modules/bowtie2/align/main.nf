@@ -1,5 +1,5 @@
 process BOWTIE2_ALIGN {
-    label 'process_high'
+    label 'M16'
     container "community.wave.seqera.io/library/bowtie2_htslib_samtools_pigz:edeb13799090a2a6"
 
     input:

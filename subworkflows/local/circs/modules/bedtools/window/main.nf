@@ -16,7 +16,6 @@ process BEDTOOLS_WINDOW {
     bedtools window \\
     -a $intervals1 \\
     -b $intervals2 \\
-    -w 1 \\
     $args \\
     > ${prefix}.bed
     """

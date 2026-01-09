@@ -23,12 +23,6 @@ process DCC_MAIN {
     -an $refseq_bed \\
     -A $ref_fasta \\
     -T $task.cpus \\
-    -D \\
-    -fg \\
-    -Pi \\
-    -M \\
-    -Nr 2 1 \\
-    -N \\
     $args \\
     && sed '1d' CircRNACount > CircRNACount_clean \\
     && sed '1d' CircCoordinates > CircCoordinates_clean
