@@ -56,7 +56,7 @@ workflow {
 
     SAMTOOLS_FASTQ(input_aligned_reads, cram_reference)
 
-    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> "${meta.id}\t${files[0].countFastq()}" }.collect())
+    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> "${meta.sample_name}\t${files[0].countFastq()}" }.collect())
 
     if (params.run_dcc) {
         log.info "Running DCC"
@@ -123,6 +123,6 @@ workflow {
     CIRCSNAKE_NORM_CX(CIRCSNAKE_VOTE.out.circex_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
     CIRCSNAKE_NORM_DCC(CIRCSNAKE_VOTE.out.dcc_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
     CIRCSNAKE_NORM_FC(CIRCSNAKE_VOTE.out.find_circ_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
-    merge_channel = CIRCSNAKE_NORM_CX.out.normed_voted_circs.combine(CIRCSNAKE_NORM_DCC.out.normed_voted_circs).combine(CIRCSNAKE_NORM_FC.out.normed_voted_circs)
+    merge_channel = CIRCSNAKE_NORM_CX.out.normed_voted_circs.join(CIRCSNAKE_NORM_DCC.out.normed_voted_circs).join(CIRCSNAKE_NORM_FC.out.normed_voted_circs)
     CIRCSNAKE_MERGE(merge_channel)
 }
