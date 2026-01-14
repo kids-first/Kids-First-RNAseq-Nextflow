@@ -15,9 +15,19 @@ arguments:
 inputs:
 -   id: aligned_reads
     inputBinding:
+        shellQuote: false
+        itemSeparator: ','
         prefix: --aligned_reads
     type:
     -   items: File
+        type: array
+-   id: sample_name
+    inputBinding:
+        shellQuote: false
+        itemSeparator: ','
+        prefix: --sample_name
+    type:
+    -   items: string
         type: array
 -   id: cram_reference
     inputBinding:
