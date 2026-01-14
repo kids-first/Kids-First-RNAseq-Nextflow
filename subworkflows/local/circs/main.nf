@@ -27,10 +27,18 @@ include { CIRCSNAKE_MATRIXTWO as CIRCSNAKE_MATRIXTWO_FC } from './modules/circsn
 include { CIRCSNAKE_MATRIXTWO as CIRCSNAKE_MATRIXTWO_CX } from './modules/circsnake/matrixtwo/main'
 include { CIRCSNAKE_VOTE } from './modules/circsnake/vote/main'
 include { CIRCSNAKE_READCOUNTS } from './modules/circsnake/readcounts/main'
-include { CIRCSNAKE_NORM } from './modules/circsnake/norm/main'
+include { CIRCSNAKE_NORM as CIRCSNAKE_NORM_CX } from './modules/circsnake/norm/main'
+include { CIRCSNAKE_NORM as CIRCSNAKE_NORM_DCC } from './modules/circsnake/norm/main'
+include { CIRCSNAKE_NORM as CIRCSNAKE_NORM_FC } from './modules/circsnake/norm/main'
+include { CIRCSNAKE_MERGE} from './modules/circsnake/merge/main'
 
 workflow {
-    input_aligned_reads = channel.fromPath(params.aligned_reads.class == String ? params.aligned_reads.split(',') as List : params.aligned_reads).map{ [["id": it.baseName, "is_paired_end": params.is_paired_end.toBoolean()], it] }
+    reads = (params.aligned_reads.class == String ? params.aligned_reads.split(',') as List : params.aligned_reads ?: []).collect{ file(it) }
+    samples = (params.sample_name.class == String ? params.sample_name.split(',') as List : params.sample_name ?: [])
+    if (reads.size() != samples.size()) {
+        error("Must provide equal number of sample names and aligned reads files")
+    }
+    input_aligned_reads = channel.fromList([samples, reads].transpose()).map{ sample, file -> [["id": file.baseName, "is_paired_end": params.is_paired_end.toBoolean(), "sample_name": sample], file] }
     cram_reference = channel.fromPath(params.cram_reference).first()
     star_genome = channel.fromPath(params.star_genome).first()
     reference = channel.fromPath(params.reference).first()
@@ -61,13 +69,13 @@ workflow {
         STAR_ALIGN_DCC_R1(r1_fq_channel, star_genome)
         STAR_ALIGN_DCC_R2(r2_fq_channel, star_genome)
 
-        x = STAR_ALIGN_DCC_PAIR.out.junctions_out.map { meta, file -> [meta.subMap("id"), file] }
-        y = STAR_ALIGN_DCC_R1.out.junctions_out.map { meta, file -> [meta.subMap("id"), file] }
-        z = STAR_ALIGN_DCC_R2.out.junctions_out.map { meta, file -> [meta.subMap("id"), file] }
+        x = STAR_ALIGN_DCC_PAIR.out.junctions_out.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
+        y = STAR_ALIGN_DCC_R1.out.junctions_out.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
+        z = STAR_ALIGN_DCC_R2.out.junctions_out.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
         tabs = x.mix(y,z).groupTuple()
-        a = STAR_ALIGN_DCC_PAIR.out.chimeric_junctions.map { meta, file -> [meta.subMap("id"), file] }
-        b = STAR_ALIGN_DCC_R1.out.chimeric_junctions.map { meta, file -> [meta.subMap("id"), file] }
-        c = STAR_ALIGN_DCC_R2.out.chimeric_junctions.map { meta, file -> [meta.subMap("id"), file] }
+        a = STAR_ALIGN_DCC_PAIR.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
+        b = STAR_ALIGN_DCC_R1.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
+        c = STAR_ALIGN_DCC_R2.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
         dcc_main_ch = a.join(b).join(c).join(tabs)
 
         DCC_MAIN(dcc_main_ch, reference, refseq_gtf)
@@ -83,7 +91,7 @@ workflow {
         log.info "Running CX"
 
         STAR_ALIGN_CX(SAMTOOLS_FASTQ.out.fastq, star_genome)
-        chimeric_junc_channel = STAR_ALIGN_CX.out.chimeric_junctions.map { meta, file -> [meta.subMap("id"), file] }
+        chimeric_junc_channel = STAR_ALIGN_CX.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
 
         CIRCEXPLORER_STARPARSE(chimeric_junc_channel)
 
@@ -103,7 +111,7 @@ workflow {
         FINDCIRC_ANCHORS(SAMTOOLS_VIEW.out.bam)
         SAMTOOLS_SPLITFASTA(reference.merge(reference_index))
         FINDCIRC_MAIN(FINDCIRC_ANCHORS.out.anchors.map { meta, file -> [meta + ["single_end": true], file]}, bowtie_index, SAMTOOLS_SPLITFASTA.out.split_fasta, channel.value(false))
-        FINDCIRC_FILTER(FINDCIRC_MAIN.out.bed_ci.map { meta, file -> [meta.subMap('id'), file]})
+        FINDCIRC_FILTER(FINDCIRC_MAIN.out.bed_ci.map { meta, file -> [meta.subMap("id", "sample_name"), file]})
         BEDTOOLS_WINDOW_FC(FINDCIRC_FILTER.out.candidates, refseq_bed)
         FINDCIRC_OUTREADER(BEDTOOLS_WINDOW_FC.out.windows)
         matrixmaker_fc_channel = FINDCIRC_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":params.output_basename], files] }
@@ -112,7 +120,9 @@ workflow {
     }
 
     CIRCSNAKE_VOTE(CIRCSNAKE_MATRIXTWO_FC.out.matrix.join(CIRCSNAKE_MATRIXTWO_CX.out.matrix).join(CIRCSNAKE_MATRIXTWO_DCC.out.matrix))
-    votes = CIRCSNAKE_VOTE.out.circex_voted.mix(CIRCSNAKE_VOTE.out.find_circ_voted, CIRCSNAKE_VOTE.out.dcc_voted)
-    norm_channel = votes.combine(CIRCSNAKE_READCOUNTS.out.readcounts)
-    CIRCSNAKE_NORM(norm_channel)
+    CIRCSNAKE_NORM_CX(CIRCSNAKE_VOTE.out.circex_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
+    CIRCSNAKE_NORM_DCC(CIRCSNAKE_VOTE.out.dcc_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
+    CIRCSNAKE_NORM_FC(CIRCSNAKE_VOTE.out.find_circ_voted.combine(CIRCSNAKE_READCOUNTS.out.readcounts))
+    merge_channel = CIRCSNAKE_NORM_CX.out.normed_voted_circs.combine(CIRCSNAKE_NORM_DCC.out.normed_voted_circs).combine(CIRCSNAKE_NORM_FC.out.normed_voted_circs)
+    CIRCSNAKE_MERGE(merge_channel)
 }
