@@ -46,14 +46,15 @@ process FINDCIRC_MAIN {
     bowtie2 \\
         -x \$INDEX \\
         $reads_args \\
-        --threads $task.cpus \\
+        --threads 8 \\
         $unaligned \\
         $args \\
         2>| >(tee ${prefix}.secondpass.log >&2) \\
-    | python /opt/circs_snake/scripts/pipelines/find_circ.py \\
+    | python /opt/circs_snake/scripts/pipelines/find_circ_mp.py \\
         -G $chrom_fastas \\
         -p $sample_name \\
         -s ${prefix}.f_c_run_sites.log \\
+        -j ${tasks.cpus - 9} \\
         $args2 \\
         > ${prefix}.sites.bed \\
         2> ${prefix}.sites.reads
