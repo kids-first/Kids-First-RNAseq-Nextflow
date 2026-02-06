@@ -9,6 +9,9 @@ from optparse import OptionParser
 import os
 import pysam
 import sys
+import traceback
+import time
+import json
 
 # Worker-local globals (populated in worker_init)
 WORKER_GENOME = None
@@ -104,11 +107,6 @@ def find_breakpoints(A, B, read, genome, chrom, asize, margin, maxdist):
     internal_mv_local = internal_mv
     xrange_local = xrange
 
-    # choose a small anchor sample to cheaply reject many candidates
-    anchor_idxs = (0,)
-    if l > 8:
-        anchor_idxs = (0, l // 2)
-
     for x in xrange_local(l + 1):
         # copy prefix from A_b and suffix from B_b in-place
         if x:
@@ -116,15 +114,6 @@ def find_breakpoints(A, B, read, genome, chrom, asize, margin, maxdist):
         suff_len = l - x
         if suff_len > 0:
             spliced_mv_local[x:] = B_b_local[x + 2: x + 2 + suff_len]
-
-        # very cheap anchor test before full mismatch scan
-        anchor_miss = False
-        for ai in anchor_idxs:
-            if spliced_mv_local[ai] != internal_mv_local[ai]:
-                anchor_miss = True
-                break
-        if anchor_miss:
-            continue
 
         # full (early-exit) mismatch count
         dist = mismatches_fn(spliced_mv_local, internal_mv_local, maxdist_local)
@@ -413,6 +402,19 @@ def worker_init(genome_path):
     WORKER_GENOME = Track(genome_path, GenomeAccessor)
 
 def worker_process(task):
+    try:
+        return worker_process_inner(task)
+    except Exception:
+        tb = traceback.format_exc()
+        errfile = 'worker_error{}_{}.log'.format(os.getpid(), int(time.time()))
+        with open(errfile, 'w') as f:
+            f.write('task: {}\n\n'.format(repr(task)))
+            f.write(tb)
+        sys.stderr.write('Worker exception; logged to {}\n'.format(errfile))
+        sys.stderr.flush()
+        raise
+
+def worker_process_inner(task):
     """
     task: (key, chrom, read, a_aend, b_pos, asize, margin, maxdist)
     Returns: (key, hits)
@@ -423,6 +425,7 @@ def worker_process(task):
     B = Seg(pos=b_pos, aend=0)
     hits = find_breakpoints(A, B, read, WORKER_GENOME, chrom, asize, margin, maxdist)
     return (key, hits)
+
 
 def main():
     global N, loci, circs, splices  # make visible to output()

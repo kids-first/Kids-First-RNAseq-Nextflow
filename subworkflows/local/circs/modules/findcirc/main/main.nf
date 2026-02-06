@@ -19,6 +19,7 @@ process FINDCIRC_MAIN {
     path("*.f_c_run_sites.log")         , emit: fc_log 
     tuple val(meta), path("*.sites.bed")                 , emit: bed_ci
     tuple val(meta), path("*.sites.reads")               , emit: reads_ci
+    path("worker_error*.log")  , emit: fc_worker_error   , optional:true
     path  "versions.yml"                , emit: versions
 
     script:
@@ -46,7 +47,7 @@ process FINDCIRC_MAIN {
     bowtie2 \\
         -x \$INDEX \\
         $reads_args \\
-        --threads 8 \\
+        --threads 6 \\
         $unaligned \\
         $args \\
         2>| >(tee ${prefix}.secondpass.log >&2) \\
@@ -54,7 +55,7 @@ process FINDCIRC_MAIN {
         -G $chrom_fastas \\
         -p $sample_name \\
         -s ${prefix}.f_c_run_sites.log \\
-        -j ${tasks.cpus - 9} \\
+        -j ${task.cpus - 7} \\
         $args2 \\
         > ${prefix}.sites.bed \\
         2> ${prefix}.sites.reads
