@@ -67,7 +67,15 @@ def grouper(n, iterable, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 def mismatches_bytes_early(a_mv, b_mv, maxdist_local):
-    # a_mv: memoryview/bytearray, b_mv: memoryview/bytes-like
+    """
+    Compare two byte sequences and count the number of mismatches, stopping early if the count exceeds maxdist_local.
+    Parameters:
+        a_mv: memoryview or bytearray - the first byte sequence to compare
+        b_mv: memoryview or bytes-like - the second byte sequence to compare
+        maxdist_local: int - the maximum number of mismatches allowed before stopping the comparison
+    Returns:
+        int - the number of mismatches found between the two byte sequences, or maxdist_local + 1 if the count exceeds maxdist_local
+    """
     diff = 0
     ln = len(b_mv)
     # local variables for speed
@@ -397,11 +405,27 @@ class Hit(object):
         return (n_reads, n_uniq, best_qual_A, best_qual_B, spliced_at_begin, spliced_at_end, tissues, tiss_counts, min(self.edits), min(self.overlaps), min(self.n_hits))
 
 def worker_init(genome_path):
+    """
+    Initialize the worker process by loading the genome data from the specified path and creating a Track object.
+    Parameters:
+        genome_path: str - the file path to the genome data that will be loaded for the worker process
+    Returns:
+        None - this function does not return any value, but it sets up a global variable WORKER_GENOME that can be accessed by the worker processes to perform their tasks.
+    """
     # Initialize a Track in each worker
     global WORKER_GENOME
     WORKER_GENOME = Track(genome_path, GenomeAccessor)
 
 def worker_process(task):
+    """
+    Wrapper for worker_process_inner to catch and log exceptions.
+    Parameters:
+        task: tuple - the input task for the worker process, expected to be in the format (key, chrom, read, a_aend, b_pos, asize, margin, maxdist)
+    Returns:
+        tuple - the result from worker_process_inner, expected to be in the format (key, hits)
+    Raises:
+        Exception - any exception raised during the execution of worker_process_inner will be caught, logged to a file, and re-raised to ensure that the worker process is aware of the failure.
+    """
     try:
         return worker_process_inner(task)
     except Exception:
@@ -416,8 +440,19 @@ def worker_process(task):
 
 def worker_process_inner(task):
     """
-    task: (key, chrom, read, a_aend, b_pos, asize, margin, maxdist)
-    Returns: (key, hits)
+    Multiprocessing worker function to find breakpoints based on the given task parameters.
+    Parameters:
+        task - a tuple containing the following elements:
+            key: a unique identifier for the task
+            chrom: the chromosome to analyze
+            read: the read sequence to compare against
+            a_aend: the end position of segment A
+            b_pos: the position of segment B
+            asize: the size of segment A
+            margin: the margin of error allowed in the comparison
+            maxdist: the maximum distance (number of mismatches) allowed before considering it a non-match
+    Returns:
+        tuple - a tuple containing the key and the hits found by the find_breakpoints function
     """
     key, chrom, read, a_aend, b_pos, asize, margin, maxdist = task
     Seg = namedtuple('Seg', ['pos', 'aend'])
