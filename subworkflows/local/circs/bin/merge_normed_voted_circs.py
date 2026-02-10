@@ -46,13 +46,13 @@ def coord_key(s: str) -> tuple:
     start, end = pos.split('-')
     return (chr_key(chrom), int(start))
 
-def read_csv(file_path: str) -> dict:
+def read_csv(file_path: str) -> dict[str, dict[str, str | float]]:
     """
     Read CSV file and return a dictionary with coordinates as keys.
     Arguments:
         file_path: Path to the CSV file.
     Returns:
-        Dictionary with coordinates as keys and relevant data as values.
+        Dictionary with coordinates as keys and a dictionary of relevant data (circ, strand, gene, sample_name, score) as values.
     """
     data = {}
     with open(file_path, mode='r', newline='', encoding='utf-8') as csvfile:
@@ -80,7 +80,7 @@ def write_csv(file_path: str, data: list[dict], fieldnames: list[str]) -> None:
 
 def main():
     if len(sys.argv) != 5:
-        print("Usage: python script.py cx.csv dcc.csv fc.csv output.csv")
+        print(f"Usage: python {sys.argv[0]} cx.csv dcc.csv fc.csv output.csv")
         sys.exit(1)
 
     cx_file: str = sys.argv[1]

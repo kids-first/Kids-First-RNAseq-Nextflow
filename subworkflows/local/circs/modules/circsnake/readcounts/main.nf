@@ -1,6 +1,6 @@
 process CIRCSNAKE_READCOUNTS {
     label 'process_single'
-    container "ubuntu:20.04"
+    container "ubuntu:22.04"
 
     input:
     val(sample_count_strings)
