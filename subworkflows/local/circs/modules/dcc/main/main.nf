@@ -1,6 +1,6 @@
 process DCC_MAIN {
     label 'process_medium'
-    container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
+    container "pgc-images.sbgenomics.com/danmiller/dcc:0.5.0"
 
     input:
     tuple val(meta), path(paired_junctions), path(read1_junctions), path(read2_junctions), path(sj_tabs)
@@ -16,7 +16,7 @@ process DCC_MAIN {
     def args = task.ext.args ?: ''
     """
     gzip -d *.SJ.out.tab.gz \\
-    && python /opt/circs_snake/scripts/pipelines/main.py \\
+    && DCC \\
     $paired_junctions \\
     -mt1 $read1_junctions \\
     -mt2 $read2_junctions \\

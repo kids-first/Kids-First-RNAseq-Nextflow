@@ -1,6 +1,6 @@
 process FINDCIRC_MAIN {
     label 'M16'
-    container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
+    container "pgc-images.sbgenomics.com/danmiller/findcirc:63533a2"
 
     input:
     tuple val(meta) , path(reads)
@@ -51,7 +51,7 @@ process FINDCIRC_MAIN {
         $unaligned \\
         $args \\
         2>| >(tee ${prefix}.secondpass.log >&2) \\
-    | python /opt/circs_snake/scripts/pipelines/find_circ_mp.py \\
+    | find_circ.py \\
         -G $chrom_fastas \\
         -p $sample_name \\
         -s ${prefix}.f_c_run_sites.log \\
