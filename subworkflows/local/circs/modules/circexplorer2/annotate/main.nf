@@ -15,7 +15,7 @@ process CIRCEXPLORER2_ANNOTATE {
     def args = task.ext.args ?: ''
     """
     CIRCexplorer2 annotate \\
-    -b $parsed_junctions \\
+    -b $fusion_junctions \\
     -g $ref_fasta \\
     -r $refseq_annot \\
     -o ${prefix}.circularRNA_known.txt \\
