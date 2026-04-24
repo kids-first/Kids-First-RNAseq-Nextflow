@@ -1,6 +1,6 @@
 process DCC_MAIN {
     label 'process_medium'
-    container "pgc-images.sbgenomics.com/danmiller/dcc:0.5.0"
+    container "pgc-images.sbgenomics.com/danmiller/circtools:2.0.4"
 
     input:
     tuple val(meta), path(paired_junctions), path(read1_junctions), path(read2_junctions), path(sj_tabs)
@@ -16,10 +16,13 @@ process DCC_MAIN {
     def args = task.ext.args ?: ''
     """
     gzip -d *.SJ.out.tab.gz \\
-    && DCC \\
-    $paired_junctions \\
-    -mt1 $read1_junctions \\
-    -mt2 $read2_junctions \\
+    && echo $paired_junctions > samplesheet.txt \\
+    && echo $read1_junctions > mate1.txt \\
+    && echo $read2_junctions > mate2.txt \\
+    && circtools detect \\
+    @samplesheet.txt \\
+    -mt1 @mate1.txt \\
+    -mt2 @mate2.txt \\
     -an $refseq_bed \\
     -A $ref_fasta \\
     -T $task.cpus \\
