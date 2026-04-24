@@ -103,10 +103,19 @@ inputs:
 -   id: output_basename
     inputBinding:
         prefix: --output_basename
-    sbg:toolDefaultValue: all
     type:
     - 'null'
     - string
+-   id: is_stranded
+    inputBinding:
+        prefix: --is_stranded
+    type:
+    - 'null'
+    - name: is_stranded
+      symbols:
+      - true
+      - false
+      type: enum
 outputs:
 -   doc: This is a template output. You can modify the glob pattern to make outputs
         more specific.
