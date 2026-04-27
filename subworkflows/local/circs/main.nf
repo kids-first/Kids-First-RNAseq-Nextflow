@@ -58,7 +58,7 @@ workflow {
 
     SAMTOOLS_FASTQ(input_aligned_reads, cram_reference)
 
-    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> "${meta.sample_name}\t${files[0].countFastq()}" }.collect())
+    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> [meta, files[0]] })
 
     if (params.run_dcc) {
         log.info "Running DCC"
