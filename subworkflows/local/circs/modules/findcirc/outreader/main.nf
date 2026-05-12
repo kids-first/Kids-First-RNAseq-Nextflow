@@ -1,6 +1,6 @@
 process FINDCIRC_OUTREADER {
     label 'process_single'
-    container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
+    container "pgc-images.sbgenomics.com/danmiller/circexplorer2:2.3.8"
 
     input:
     tuple val(meta), path(annotated_circs)
@@ -12,9 +12,9 @@ process FINDCIRC_OUTREADER {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
     """
-    perl /opt/circs_snake/scripts/f_c_outreader.pl \\
-    --i $annotated_circs \\
-    --o ${prefix}.findcirc.tsv \\
+    f_c_outreader.py \\
+    --infile $annotated_circs \\
+    --outfile ${prefix}.findcirc.tsv \\
     $args 
     """
 }

@@ -11,6 +11,8 @@ include { BEDTOOLS_WINDOW as BEDTOOLS_WINDOW_DCC } from './modules/bedtools/wind
 include { BEDTOOLS_WINDOW as BEDTOOLS_WINDOW_FC } from './modules/bedtools/window/main'
 include { CIRCEXPLORER_STARPARSE } from './modules/circexplorer/starparse/main'
 include { CIRCEXPLORER_MAIN } from './modules/circexplorer/main/main'
+include { CIRCEXPLORER2_PARSE } from './modules/circexplorer2/parse/main'
+include { CIRCEXPLORER2_ANNOTATE } from './modules/circexplorer2/annotate/main'
 include { CIRCEXPLORER_OUTREADER } from './modules/circexplorer/outreader/main'
 include { BOWTIE2_ALIGN as BOWTIE2_ALIGN_PRIMARY } from './modules/bowtie2/align/main'
 include { SAMTOOLS_VIEW } from './modules/samtools/view/main'
@@ -56,7 +58,7 @@ workflow {
 
     SAMTOOLS_FASTQ(input_aligned_reads, cram_reference)
 
-    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> "${meta.sample_name}\t${files[0].countFastq()}" }.collect())
+    CIRCSNAKE_READCOUNTS(SAMTOOLS_FASTQ.out.fastq.map { meta, files -> [meta, files[0]] })
 
     if (params.run_dcc) {
         log.info "Running DCC"
@@ -91,12 +93,12 @@ workflow {
         log.info "Running CX"
 
         STAR_ALIGN_CX(SAMTOOLS_FASTQ.out.fastq, star_genome)
-        chimeric_junc_channel = STAR_ALIGN_CX.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name"), file] }
+        chimeric_junc_channel = STAR_ALIGN_CX.out.chimeric_junctions.map { meta, file -> [meta.subMap("id", "sample_name") + ["aligner": "STAR"], file] }
 
-        CIRCEXPLORER_STARPARSE(chimeric_junc_channel)
+        CIRCEXPLORER2_PARSE(chimeric_junc_channel)
+        CIRCEXPLORER2_ANNOTATE(CIRCEXPLORER2_PARSE.out.fusion_junctions, reference, refseq_annot)
 
-        CIRCEXPLORER_MAIN(CIRCEXPLORER_STARPARSE.out.fusion_junctions, reference, refseq_annot)
-        CIRCEXPLORER_OUTREADER(CIRCEXPLORER_MAIN.out.circs)
+        CIRCEXPLORER_OUTREADER(CIRCEXPLORER2_ANNOTATE.out.circs)
         matrixmaker_cx_channel = CIRCEXPLORER_OUTREADER.out.processed_circs.map { meta, file -> file }.collect().map{ files -> [["id":params.output_basename], files] }
         CIRCSNAKE_MATRIXMAKER_CX(matrixmaker_cx_channel, mm1_circ, mm1_refseq)
         CIRCSNAKE_MATRIXTWO_CX(CIRCSNAKE_MATRIXMAKER_CX.out.matrix, micrornas, coding_circs, hallmarks, ensembl_gene_descriptions)
@@ -109,8 +111,7 @@ workflow {
         primary_alignment_channel = BOWTIE2_ALIGN_PRIMARY.out.bam.join(BOWTIE2_ALIGN_PRIMARY.out.csi)
         SAMTOOLS_VIEW(primary_alignment_channel, channel.value([[],[]]), channel.value([]), channel.value([]))
         FINDCIRC_ANCHORS(SAMTOOLS_VIEW.out.bam)
-        SAMTOOLS_SPLITFASTA(reference.merge(reference_index))
-        FINDCIRC_MAIN(FINDCIRC_ANCHORS.out.anchors.map { meta, file -> [meta + ["single_end": true], file]}, bowtie_index, SAMTOOLS_SPLITFASTA.out.split_fasta, channel.value(false))
+        FINDCIRC_MAIN(FINDCIRC_ANCHORS.out.anchors.map { meta, file -> [meta + ["single_end": true], file]}, bowtie_index, reference, channel.value(false))
         FINDCIRC_FILTER(FINDCIRC_MAIN.out.bed_ci.map { meta, file -> [meta.subMap("id", "sample_name"), file]})
         BEDTOOLS_WINDOW_FC(FINDCIRC_FILTER.out.candidates, refseq_bed)
         FINDCIRC_OUTREADER(BEDTOOLS_WINDOW_FC.out.windows)

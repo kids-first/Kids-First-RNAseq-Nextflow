@@ -1,11 +1,11 @@
 process FINDCIRC_MAIN {
-    label 'M16'
-    container "pgc-images.sbgenomics.com/danmiller/circs-dcc:0.1.0"
+    label 'C16'
+    container "pgc-images.sbgenomics.com/danmiller/findcirc_mp:0.1.0"
 
     input:
     tuple val(meta) , path(reads)
     path(index_tar)
-    path(chrom_fastas)
+    path(reference)
     val   save_unaligned
 
     output:
@@ -16,7 +16,7 @@ process FINDCIRC_MAIN {
     tuple val(meta), path("*.crai")     , emit: crai    , optional:true
     tuple val(meta), path("*fastq.gz")  , emit: fastq   , optional:true
     path("*.secondpass.log")            , emit: bowtie_log
-    path("*.f_c_run_sites.log")         , emit: fc_log 
+    path("*.stats.txt")         , emit: stats
     tuple val(meta), path("*.sites.bed")                 , emit: bed_ci
     tuple val(meta), path("*.sites.reads")               , emit: reads_ci
     path("worker_error*.log")  , emit: fc_worker_error   , optional:true
@@ -46,20 +46,18 @@ process FINDCIRC_MAIN {
 
     bowtie2 \\
         -x \$INDEX \\
+        --reorder \\
         $reads_args \\
         --threads 6 \\
         $unaligned \\
         $args \\
         2>| >(tee ${prefix}.secondpass.log >&2) \\
-    | python /opt/circs_snake/scripts/pipelines/find_circ_mp.py \\
-        -G $chrom_fastas \\
+    | find_circ_mp.py \\
+        -G $reference \\
         -p $sample_name \\
-        -s ${prefix}.f_c_run_sites.log \\
-        -j ${task.cpus - 7} \\
-        $args2 \\
-        > ${prefix}.sites.bed \\
-        2> ${prefix}.sites.reads
-         
+        --output_prefix ${prefix} \\
+        --procs ${task.cpus - 6} \\
+        $args2
 
     if [ -f ${prefix}.unmapped.fastq.1.gz ]; then
         mv ${prefix}.unmapped.fastq.1.gz ${prefix}.unmapped_1.fastq.gz
